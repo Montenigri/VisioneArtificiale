@@ -91,3 +91,11 @@ def sigmaSq(x):
     return xsign, sigma
 
 
+###
+#
+# Input: matrice H, matrice dell'omografia iniziale X ed i punti 2D contenuti in U
+#
+###
+def refineHomography(H,X,U):
+    N = len(X)
+    
