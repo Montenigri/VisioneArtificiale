@@ -1,29 +1,19 @@
 import numpy as np
 import math
 
-###
-#
-#Input: X serie ordinata di punti nel mondo 3D del piano target 
-#e U serie di punti ordinata ed in relazione con X sul piano 2D.
-#
-#Output: Paramentri intrinseci stimati della camera
-#
-###
 
-def Calibrate(X,U):
-    Hinit = getHomographies(X, U)
-    A = getCameraIntrinsics(Hinit)
-    W = getExtrinsic(Ainit, Hinit)
-    return A,W
 
-####
-#
-# Accetta in input i punti X del modello 3D e i relativi punti nel sensore per ritornare
-# una stima dell'homografia
-#
-####
+def Calibrate(corrispondenze):
+    print("sono dentro calibrate")
+    H = []
+    for corrispondenza in corrispondenze:
+        H.append(compute_view_based_homography(corrispondenza))
+    A = get_intrinsic_parameters(H)
+    return A
+
+
 def compute_view_based_homography(corrispondenze):
-    
+    print("calcolo omografia")
     image_points = corrispondenze[0]
     object_points = corrispondenze[1]
     normalized_image_points = corrispondenze[2]
@@ -60,11 +50,6 @@ def compute_view_based_homography(corrispondenze):
     print("Homography for View : \n", h)
     return h
 
-###
-#
-# Accetta in input P e Q serie di punti 2D e ritorna l'omografia stimata
-#
-###
 
 
 
@@ -108,8 +93,7 @@ def getNormalisationMatrix(punti, nome = "A"):
     
     x_mean, y_mean = np.mean(punti, axis=0)
     var_x, var_y = np.var(punti, axis=0)    
-    #xsign, sigmaSqX = sigmaSq(x[:,0])
-    #Ysign, sigmaSqY = sigmaSq(x[:,1])
+    
 
     s_x, s_y = np.sqrt(2 / var_x), np.sqrt(2 / var_y)
 
