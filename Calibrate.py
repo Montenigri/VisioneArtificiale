@@ -12,11 +12,9 @@ import math
 
 def Calibrate(X,U):
     Hinit = getHomographies(X, U)
-    Ainit = getCameraIntrinsics(Hinit)
-    Winit = getExtrinsic(Ainit, Hinit)
-    Kinit = EstLensDistrortion(Ainit, Winit, X, U)
-    A, k, W = refineAll(Ainit,Kinit,Winit,X,U)
-    return A,k,W
+    A = getCameraIntrinsics(Hinit)
+    W = getExtrinsic(Ainit, Hinit)
+    return A,W
 
 ####
 #
@@ -29,8 +27,7 @@ def getHomographies(X,U):
     H     = []
     for i in range (0,M):
         Hinit = estimateHomography(X,U[i])
-        Href = refineHomography(Hinit, X, U[i])
-        H.append(Href)
+        H.append(Hinit)
     return H
 
 ###
@@ -90,12 +87,8 @@ def sigmaSq(x):
         sigma = sigma + (x[i]-xsign)**2
     return xsign, sigma
 
-
-###
-#
-# Input: matrice H, matrice dell'omografia iniziale X ed i punti 2D contenuti in U
-#
-###
-def refineHomography(H,X,U):
-    N = len(X)
-    
+def getCameraIntrinsics(H):
+    N = len(H)
+    V = np.empty([(2*N), 6])
+    for i in range (0,N):
+        V[2*i, :] = 
