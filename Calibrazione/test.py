@@ -9,7 +9,6 @@ SQUARE_SIZE = 1.0
 def get_camera_images(dir):
     images = glob.glob(dir + "*.jpeg")
     images = sorted(images)
-    print (images)
     for each in images:
         yield (each, cv2.imread(each, 0))
 
@@ -110,37 +109,14 @@ def compute_view_based_homography(corrispondenze):
     h_norm = h_norm.reshape(3, 3)
     h = np.matmul(np.matmul(N_u_inv,h_norm), N_x)
     h = h[:,:]/h[2, 2]    
-
     return h
 
 
 
-def minimizer_func(initial_guess, X, Y, h, N):
-    x_j = X.reshape(N, 2)
-    
-    projected = [0 for i in range(2*N)]
-    for j in range(N):
-        x, y = x_j[j]
-        w = h[6]*x + h[7]*y + h[8]
-        projected[2*j] = (h[0] * x + h[1] * y + h[2]) / w
-        projected[2*j + 1] = (h[3] * x + h[4] * y + h[5]) / w
 
-    # return projected
-    return (np.abs(projected - Y))**2
         
 
-def jac_function(initial_guess, X, Y, h, N):
-    x_j = X.reshape(N, 2)
-    jacobian = np.zeros( (2*N, 9) , np.float64)
-    for j in range(N):
-        x, y = x_j[j]
-        sx = np.float64(h[0]*x + h[1]*y + h[2])
-        sy = np.float64(h[3]*x + h[4]*y + h[5])
-        w = np.float64(h[6]*x + h[7]*y + h[8])
-        jacobian[2*j] = np.array([x/w, y/w, 1/w, 0, 0, 0, -sx*x/w**2, -sx*y/w**2, -sx/w**2])
-        jacobian[2*j + 1] = np.array([0, 0, 0, x/w, y/w, 1/w, -sy*x/w**2, -sy*y/w**2, -sy/w**2])
 
-    return jacobian
 
 
     
@@ -208,23 +184,45 @@ def getCameraCal(dir):
 
     return mtx
 
+def getChessborda(dir):
+    chessboard_correspondences = getChessboardCorners(dir)
+   # print(chessboard_correspondences,"\n \n ")
+    chessboard_correspondences_normalized = normalize_points(chessboard_correspondences)
+    #print(chessboard_correspondences_normalized,"\n \n ")
+    return chessboard_correspondences_normalized
+
+def getImageHomography():
+    dir = f"datiLaboratorio/singola/"
+    chessboard_correspondences_normalized = getChessborda(dir)
+    H=[]
+    for correspondence in chessboard_correspondences_normalized:
+        H.append( compute_view_based_homography(correspondence) )
+    return H
+
+def getRT(K,H):
+    H = H[0]
+    RT = np.matmul(np.linalg.inv(K), H)
+    print("RT    " , RT)
+    R = RT[:,:2]
+    print("R   ",R)
+    T = RT[:,2]
+    print("T   ",T)
+    return R, T
+
 def calibra(dir):
     dir = f"datiLaboratorio/checkboard/{str(dir)}/"
-    chessboard_correspondences = getChessboardCorners(dir)
-        
-    chessboard_correspondences_normalized = normalize_points(chessboard_correspondences)
+    
+    chessboard_correspondences_normalized = getChessborda(dir)
 
     H = []
     for correspondence in chessboard_correspondences_normalized:
         H.append(compute_view_based_homography(correspondence))
 
-    CameraIntrinsic = get_intrinsic_parameters(H)
-    CalcolataDaCV2 = getCameraCal(dir)
-    Errore = CameraIntrinsic  - CalcolataDaCV2
-    print("Camera Intrinsic")
-    print(CameraIntrinsic)
-    print ("Calcolata da CV2")
-    print(CalcolataDaCV2)
-    print("Errore")
-    print(Errore)
+    #CameraIntrinsic = get_intrinsic_parameters(H)
+    #CalcolataDaCV2 = getCameraCal(dir)
+    #Errore = np.absolute(CameraIntrinsic  - CalcolataDaCV2)
+    #print (Errore)
+    return get_intrinsic_parameters(H)
 
+
+getRT(K = calibra(4), H=getImageHomography())
