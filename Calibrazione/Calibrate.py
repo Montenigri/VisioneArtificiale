@@ -4,9 +4,9 @@ import math
 
 
 def Calibrate(corrispondenze):
-    print("sono dentro calibrate")
     H = []
     for corrispondenza in corrispondenze:
+        print(corrispondenza)
         H.append(compute_view_based_homography(corrispondenza))
     A = get_intrinsic_parameters(H)
     return A
@@ -14,6 +14,7 @@ def Calibrate(corrispondenze):
 
 def compute_view_based_homography(corrispondenze):
     print("calcolo omografia")
+    print(len(corrispondenze))
     image_points = corrispondenze[0]
     object_points = corrispondenze[1]
     normalized_image_points = corrispondenze[2]
