@@ -3,20 +3,18 @@ import numpy as np
 import cv2
 from scipy import optimize as opt
 
-
-
-DATA_DIR = "datiLaboratorio/checkboard/"
 PATTERN_SIZE = (9, 6)
 SQUARE_SIZE = 1.0 
 
-def get_camera_images():
-    images = glob.glob(DATA_DIR + "*.jpeg")
+def get_camera_images(dir):
+    images = glob.glob(dir + "*.jpeg")
     images = sorted(images)
+    print (images)
     for each in images:
         yield (each, cv2.imread(each, 0))
 
 
-def getChessboardCorners(images = None):
+def getChessboardCorners(dir):
     objp = np.zeros((PATTERN_SIZE[1]*PATTERN_SIZE[0], 3), dtype=np.float64)
     objp[:, :2] = np.indices(PATTERN_SIZE).T.reshape(-1, 2)
     objp *= SQUARE_SIZE
@@ -25,14 +23,13 @@ def getChessboardCorners(images = None):
     image_points = []
     object_points = []
     correspondences = []
-    getImage = get_camera_images()
+    getImage = get_camera_images(dir)
     for (path, each) in getImage:  #images:
        # print("Processing Image : ", path)
         ret, corners = cv2.findChessboardCorners(each, patternSize=PATTERN_SIZE)
         if ret:
            # print ("Chessboard Detected ")
             corners = corners.reshape(-1, 2)
-        
             if corners.shape[0] == objp.shape[0] :
                 image_points.append(corners)
                 object_points.append(objp[:,:-1]) #Togliamo Z perché ci interessano i punti nel piano XY
@@ -45,11 +42,8 @@ def get_normalization_matrix(pts, name="A"):
     pts = pts.astype(np.float64)
     x_mean, y_mean = np.mean(pts, axis=0)
     var_x, var_y = np.var(pts, axis=0)
-
     s_x , s_y = np.sqrt(2/var_x), np.sqrt(2/var_y)
-    
     n = np.array([[s_x, 0, -s_x*x_mean], [0, s_y, -s_y*y_mean], [0, 0, 1]])
-
     n_inv = np.array([ [1./s_x ,  0 , x_mean], [0, 1./s_y, y_mean] , [0, 0, 1] ])
 
     return n.astype(np.float64), n_inv.astype(np.float64)
@@ -66,7 +60,6 @@ def normalize_points(chessboard_correspondences):
         # converto imp ed objp a omogenei
         hom_imp = np.array([ [[each[0]], [each[1]], [1.0]] for each in imp])
         hom_objp = np.array([ [[each[0]], [each[1]], [1.0]] for each in objp])
-
 
         normalized_hom_imp = hom_imp
         normalized_hom_objp = hom_objp
@@ -98,7 +91,7 @@ def compute_view_based_homography(corrispondenze):
     N_u = corrispondenze[4]
     N_x = corrispondenze[5]
     N_u_inv = corrispondenze[6]
-    N_x_inv = correspondence[7]
+    N_x_inv = corrispondenze[7]
 
     N = len(image_points)
 
@@ -107,19 +100,15 @@ def compute_view_based_homography(corrispondenze):
     for i in range(N):
         X, Y = normalized_object_points[i] #A
         u, v = normalized_image_points[i] #B
-
         row_1 = np.array([ -X, -Y, -1, 0, 0, 0, X*u, Y*u, u])
         row_2 = np.array([ 0, 0, 0, -X, -Y, -1, X*v, Y*v, v])
         M[2*i] = row_1
         M[(2*i) + 1] = row_2
 
     u, s, vh = np.linalg.svd(M)
-  
     h_norm = vh[np.argmin(s)]
     h_norm = h_norm.reshape(3, 3)
-    
     h = np.matmul(np.matmul(N_u_inv,h_norm), N_x)
-    
     h = h[:,:]/h[2, 2]    
 
     return h
@@ -127,11 +116,6 @@ def compute_view_based_homography(corrispondenze):
 
 
 def minimizer_func(initial_guess, X, Y, h, N):
-    # X : normalized object points flattened
-    # Y : normalized image points flattened
-    # h : homography flattened
-    # N : number of points
-    # 
     x_j = X.reshape(N, 2)
     
     projected = [0 for i in range(2*N)]
@@ -159,30 +143,7 @@ def jac_function(initial_guess, X, Y, h, N):
     return jacobian
 
 
-def refine_homographies(H, correspondences, skip=False):
-    if skip:
-        return H
-
-    image_points = correspondence[0]
-    object_points = correspondence[1]
-    normalized_image_points = correspondence[2]
-    normalized_object_points = correspondence[3]
-    N_u = correspondence[4]
-    N_x = correspondence[5]
-    N_u_inv = correspondence[6]
-    N_x_inv = correspondence[7]
-
-    N = normalized_object_points.shape[0]
-    X = object_points.flatten()
-    Y = image_points.flatten()
-    h = H.flatten()
-    h_prime = opt.least_squares(fun=minimizer_func, x0=h, jac=jac_function, method="lm" , args=[X, Y, h, N], verbose=0)
-
     
-    if h_prime.success:
-        H =  h_prime.x.reshape(3, 3)
-    H = H/H[2, 2]
-    return H
 
 def v_pq(p, q, H):
     v = np.array([
@@ -208,7 +169,6 @@ def get_intrinsic_parameters(H_r):
     # risoluzione V.b = 0
     u, s, vh = np.linalg.svd(V)
     b = vh[np.argmin(s)]
-    #print("V.b = 0 Solution : ", b.shape)
 
     vc = (b[1]*b[3] - b[0]*b[4])/(b[0]*b[2] - b[1]**2)
     l = b[5] - (b[3]**2 + vc*(b[1]*b[2] - b[0]*b[4]))/b[0]
@@ -216,13 +176,6 @@ def get_intrinsic_parameters(H_r):
     beta = np.sqrt(((l*b[0])/(b[0]*b[2] - b[1]**2)))
     gamma = -1*((b[1])*(alpha**2) *(beta/l))
     uc = (gamma*vc/beta) - (b[3]*(alpha**2)/l)
-
-    #print([vc,
-    #        l,
-     #       alpha,
-     #       beta,
-     #       gamma,
-     #   uc])
 
     A = np.array([
             [alpha, gamma, uc],
@@ -232,15 +185,14 @@ def get_intrinsic_parameters(H_r):
     
     return A
 
-def getCameraCal():
+def getCameraCal(dir):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     objpoints = []
     imgpoints = [] 
     
-    
     objp = np.zeros((1, PATTERN_SIZE[0] * PATTERN_SIZE[1], 3), np.float32)
     objp[0,:,:2] = np.mgrid[0:PATTERN_SIZE[0], 0:PATTERN_SIZE[1]].T.reshape(-1, 2)
-    getImage = get_camera_images()
+    getImage = get_camera_images(dir)
     for (path, each) in getImage:
         gray = each
         ret, corners = cv2.findChessboardCorners(gray, PATTERN_SIZE, cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
@@ -251,29 +203,28 @@ def getCameraCal():
             corners2 = cv2.cornerSubPix(gray, corners, (11,11),(-1,-1), criteria)
             
             imgpoints.append(corners2)
-        
-   
+
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
-    
-    #print("Camera matrix : \n")
-    #print(mtx)
+
     return mtx
 
+def calibra(dir):
+    dir = f"datiLaboratorio/checkboard/{str(dir)}/"
+    chessboard_correspondences = getChessboardCorners(dir)
+        
+    chessboard_correspondences_normalized = normalize_points(chessboard_correspondences)
 
-chessboard_correspondences = getChessboardCorners(images=None)
-      
-chessboard_correspondences_normalized = normalize_points(chessboard_correspondences)
+    H = []
+    for correspondence in chessboard_correspondences_normalized:
+        H.append(compute_view_based_homography(correspondence))
 
-H = []
-for correspondence in chessboard_correspondences_normalized:
-    H.append(compute_view_based_homography(correspondence))
+    CameraIntrinsic = get_intrinsic_parameters(H)
+    CalcolataDaCV2 = getCameraCal(dir)
+    Errore = CameraIntrinsic  - CalcolataDaCV2
+    print("Camera Intrinsic")
+    print(CameraIntrinsic)
+    print ("Calcolata da CV2")
+    print(CalcolataDaCV2)
+    print("Errore")
+    print(Errore)
 
-CameraIntrinsic = get_intrinsic_parameters(H)
-CalcolataDaCV2 = getCameraCal()
-Errore = CameraIntrinsic  - CalcolataDaCV2
-print("Camera Intrinsic")
-print(CameraIntrinsic)
-print ("Calcolata da CV2")
-print(CalcolataDaCV2)
-print("Errore")
-print(Errore)
