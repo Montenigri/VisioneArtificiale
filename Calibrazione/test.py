@@ -25,7 +25,8 @@ def getChessboardCorners(images = None):
     image_points = []
     object_points = []
     correspondences = []
-    for (path, each) in get_camera_images(): #images:
+    getImage = get_camera_images()
+    for (path, each) in getImage:  #images:
        # print("Processing Image : ", path)
         ret, corners = cv2.findChessboardCorners(each, patternSize=PATTERN_SIZE)
         if ret:
@@ -239,7 +240,8 @@ def getCameraCal():
     
     objp = np.zeros((1, PATTERN_SIZE[0] * PATTERN_SIZE[1], 3), np.float32)
     objp[0,:,:2] = np.mgrid[0:PATTERN_SIZE[0], 0:PATTERN_SIZE[1]].T.reshape(-1, 2)
-    for (path, each) in get_camera_images():
+    getImage = get_camera_images()
+    for (path, each) in getImage:
         gray = each
         ret, corners = cv2.findChessboardCorners(gray, PATTERN_SIZE, cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
         
@@ -266,19 +268,12 @@ H = []
 for correspondence in chessboard_correspondences_normalized:
     H.append(compute_view_based_homography(correspondence))
 
-A = get_intrinsic_parameters(H)
+CameraIntrinsic = get_intrinsic_parameters(H)
 CalcolataDaCV2 = getCameraCal()
-mediaA = sum(A)/len(A)
-
-mediaCV2 = sum(CalcolataDaCV2)/len(CalcolataDaCV2)
-Errore = mediaA - mediaCV2
-
-print("media A")
-print(mediaA)
-print("media CV2")
-print(mediaCV2)
+Errore = CameraIntrinsic  - CalcolataDaCV2
+print("Camera Intrinsic")
+print(CameraIntrinsic)
+print ("Calcolata da CV2")
+print(CalcolataDaCV2)
 print("Errore")
 print(Errore)
-
-
-print("len di a", len(A))
