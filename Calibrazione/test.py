@@ -213,7 +213,7 @@ def calibra(dir):
     dir = f"datiLaboratorio/checkboard/{str(dir)}/"
     
     chessboard_correspondences_normalized = getChessborda(dir)
-
+    print(chessboard_correspondences_normalized)
     H = []
     for correspondence in chessboard_correspondences_normalized:
         H.append(compute_view_based_homography(correspondence))
@@ -224,5 +224,6 @@ def calibra(dir):
     #print (Errore)
     return get_intrinsic_parameters(H)
 
+calibra(4)
 
-getRT(K = calibra(4), H=getImageHomography())
+#getRT(K = calibra(4), H=getImageHomography())
