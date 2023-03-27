@@ -155,13 +155,13 @@ def v_pq(p, q, H):
 #
 ###
 
-def get_intrinsic_parameters(H):
+def get_intrinsic_parameters(H_R):
     
-    M = len(H)
+    M = len(H_R)
     V = np.zeros((2*M, 6), np.float64)
 
     for i in range(M):
-        H = H[i]
+        H = H_R[i]
         V[2*i] = v_pq(p=0, q=1, H=H)
         V[2*i + 1] = np.subtract(v_pq(p=0, q=0, H=H), v_pq(p=1, q=1, H=H))
 
@@ -241,7 +241,7 @@ def getChessborda(dir):
 
 ###
 #
-# Funzione per calcolare l'omografia di una sola foto (serve per la foto del laboratorio)
+# Funzione per calcolare l'omografia di una sola foto (serve per la foto del laboratori)
 #
 ###
 def getImageHomography():
@@ -250,7 +250,7 @@ def getImageHomography():
     H=[]
     #senza questo for non funziona niente anche se l'elemento è singolo, non so perché
     for correspondence in chessboard_correspondences_normalized:
-        H.append(compute_view_based_homography(correspondence) )
+        H.append(compute_homography(correspondence) )
     return H
 
 ###
@@ -271,22 +271,50 @@ def calibra(dir):
     CameraIntrinsic = get_intrinsic_parameters(H)
     CalcolataDaCV2 = getCameraCal(dir)
     Errore = np.absolute(CameraIntrinsic  - CalcolataDaCV2)
-    print("<----------------->")
-    print("<----------------->")
-    print("<----------------->")
-    print("Camera Intrinsic")
-    print(CameraIntrinsic)
-    print("<----------------->")
-    print("<----------------->")
-    print("<----------------->")
-    print ("Calcolata da CV2")
-    print(CalcolataDaCV2)
-    print("<----------------->")
-    print("<----------------->")
-    print("<----------------->")
-    print("Errore")
-    print(Errore)
+    #print("<----------------->")
+    #print("<----------------->")
+    #print("<----------------->")
+    #print("Camera Intrinsic")
+    #print(CameraIntrinsic)
+    #print("<----------------->")
+    #print("<----------------->")
+    #print("<----------------->")
+    #print ("Calcolata da CV2")
+    #print(CalcolataDaCV2)
+    #print("<----------------->")
+    #print("<----------------->")
+    #print("<----------------->")
+    #print("Errore")
+    #print(Errore)
 
     return CameraIntrinsic, CalcolataDaCV2, Errore
 
+
+
+def draw_ground(img, R, T, K):
+    xg = np.arange(-5, 10, 0.5) 
+    yg = np.arange(-5, 10, 0.5) 
+    xx, yy = np.meshgrid(xg, yg)
+
+    dim = xx.shape[0]*xx.shape[1]
+    points = np.zeros((dim,3), np.float32)
+
+    xx = xx.reshape(dim)
+    yy = yy.reshape(dim)
+
+    points[:,0] = xx 
+    points[:,1] = yy 
+    points[:,2] = np.zeros((dim))
+
+    ground, _ = cv2.projectPoints(points, R, T, K)
+    ground = np.squeeze(ground).astype(np.int32)
+
+    img_to_show_res = img.copy()
+    for p in ground:
+        img_to_show_res = cv2.circle(img_to_show_res, p, 3, (255, 0, 0) )
+
+    cv2.imshow("ground", img_to_show_res)
+    cv2.waitKey(1)
+    cv2.destroyAllWindows()
+    
 

@@ -29,6 +29,7 @@ def getChessboardCorners(dir):
         if ret:
            # print ("Chessboard Detected ")
             corners = corners.reshape(-1, 2)
+
             if corners.shape[0] == objp.shape[0] :
                 image_points.append(corners)
                 object_points.append(objp[:,:-1]) #Togliamo Z perché ci interessano i punti nel piano XY
@@ -211,6 +212,7 @@ def calibra(dir):
     #print(chessboard_correspondences_normalized)
     H = []
     for correspondence in chessboard_correspondences_normalized:
+        print("corr shape: \n",correspondence)
         H.append(compute_view_based_homography(correspondence))
 
     CameraIntrinsic = get_intrinsic_parameters(H)
@@ -219,6 +221,16 @@ def calibra(dir):
     print (Errore)
     return get_intrinsic_parameters(H)
 
-calibra(16)
 
+def crossvalidation(fold, corrispondenze):
+    multiply = int(len(corrispondenze)/4)
+    a = int(multiply * fold)
+    b = int(multiply * (fold +1))
+    validation = corrispondenze[a : b]
+    training = [i for i in corrispondenze if i not in validation]
+    errore = []
+
+     
+
+calibra(4)
 #getRT(K = calibra(4), H=getImageHomography())
