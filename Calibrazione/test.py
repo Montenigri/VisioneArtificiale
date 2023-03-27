@@ -111,16 +111,6 @@ def compute_view_based_homography(corrispondenze):
     h = h[:,:]/h[2, 2]    
     return h
 
-
-
-
-        
-
-
-
-
-    
-
 def v_pq(p, q, H):
     v = np.array([
             H[0, p]*H[0, q],
@@ -195,8 +185,9 @@ def getImageHomography():
     dir = f"datiLaboratorio/singola/"
     chessboard_correspondences_normalized = getChessborda(dir)
     H=[]
+    #senza questo for non funziona niente anche se l'elemento è singolo, non so perché
     for correspondence in chessboard_correspondences_normalized:
-        H.append( compute_view_based_homography(correspondence) )
+        H.append(compute_view_based_homography(correspondence) )
     return H
 
 def getRT(K,H):

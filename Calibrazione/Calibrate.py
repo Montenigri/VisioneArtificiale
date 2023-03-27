@@ -232,6 +232,26 @@ def getCameraCal(dir):
 
     return mtx
 
+def getChessborda(dir):
+    chessboard_correspondences = getChessboardCorners(dir)
+   # print(chessboard_correspondences,"\n \n ")
+    chessboard_correspondences_normalized = normalize_points(chessboard_correspondences)
+    #print(chessboard_correspondences_normalized,"\n \n ")
+    return chessboard_correspondences_normalized
+
+###
+#
+# Funzione per calcolare l'omografia di una sola foto (serve per la foto del laboratorio)
+#
+###
+def getImageHomography():
+    dir = f"datiLaboratorio/singola/"
+    chessboard_correspondences_normalized = getChessborda(dir)
+    H=[]
+    #senza questo for non funziona niente anche se l'elemento è singolo, non so perché
+    for correspondence in chessboard_correspondences_normalized:
+        H.append(compute_view_based_homography(correspondence) )
+    return H
 
 ###
 #
