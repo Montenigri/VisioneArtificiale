@@ -6,28 +6,38 @@ from scipy import optimize as opt
 PATTERN_SIZE = (9, 6)
 SQUARE_SIZE = 1.0 
 
+
+###
+#
+#
+# get_camera_images raccoglie tutte le foto e ritorna una lista composta dal path dell'immagine
+# e dall'oggetto cv2 dell'immagine,a partire da una directory
+#
+#
+###
 def get_camera_images(dir):
     images = glob.glob(dir + "*.jpeg")
     images = sorted(images)
     for each in images:
         yield (each, cv2.imread(each, 0))
 
-
+###
+#
+# Ritorna i punti della scacchiera
+#
+###
 def getChessboardCorners(dir):
     objp = np.zeros((PATTERN_SIZE[1]*PATTERN_SIZE[0], 3), dtype=np.float64)
     objp[:, :2] = np.indices(PATTERN_SIZE).T.reshape(-1, 2)
     objp *= SQUARE_SIZE
 
-    chessboard_corners = []
     image_points = []
     object_points = []
     correspondences = []
     getImage = get_camera_images(dir)
-    for (path, each) in getImage:  #images:
-       # print("Processing Image : ", path)
+    for (path, each) in getImage:
         ret, corners = cv2.findChessboardCorners(each, patternSize=PATTERN_SIZE)
         if ret:
-           # print ("Chessboard Detected ")
             corners = corners.reshape(-1, 2)
             if corners.shape[0] == objp.shape[0] :
                 image_points.append(corners)
@@ -36,6 +46,11 @@ def getChessboardCorners(dir):
 
     return correspondences
 
+###
+#
+# Normalizza la matrice altrimenti non funziona nulla
+#
+###
 def get_normalization_matrix(pts, name="A"):
         
     pts = pts.astype(np.float64)
@@ -47,7 +62,11 @@ def get_normalization_matrix(pts, name="A"):
 
     return n.astype(np.float64), n_inv.astype(np.float64)
 
-
+###
+#
+# Vedasi sopra
+#
+###
 def normalize_points(chessboard_correspondences):
     views = len(chessboard_correspondences)
     ret_correspondences = [] 
@@ -81,7 +100,13 @@ def normalize_points(chessboard_correspondences):
 
     return ret_correspondences
 
-def compute_view_based_homography(corrispondenze):
+###
+#
+# 
+#
+###
+
+def compute_homography(corrispondenze):
     
     image_points = corrispondenze[0]
     object_points = corrispondenze[1]
@@ -113,14 +138,6 @@ def compute_view_based_homography(corrispondenze):
     return h
 
 
-
-
-        
-
-
-
-    
-
 def v_pq(p, q, H):
     v = np.array([
             H[0, p]*H[0, q],
@@ -132,13 +149,19 @@ def v_pq(p, q, H):
         ])
     return v
 
-def get_intrinsic_parameters(H_r):
+###
+#
+# Trova i parametri intrinseci della camera 
+#
+###
+
+def get_intrinsic_parameters(H):
     
-    M = len(H_r)
+    M = len(H)
     V = np.zeros((2*M, 6), np.float64)
 
     for i in range(M):
-        H = H_r[i]
+        H = H[i]
         V[2*i] = v_pq(p=0, q=1, H=H)
         V[2*i + 1] = np.subtract(v_pq(p=0, q=0, H=H), v_pq(p=1, q=1, H=H))
 
@@ -161,6 +184,13 @@ def get_intrinsic_parameters(H_r):
     
     return A
 
+
+###
+#
+# Calcola RT a partire da K e H
+#
+###
+
 def getRT(K,H):
     H = H[0]
     h1 = H[:,0]
@@ -174,7 +204,11 @@ def getRT(K,H):
     R = np.transpose(np.array([r1,r2,r3]))
     #print (f"r1: {r1}\n r2: {r2}\n r3:{r3}\n R: {R}\nt: {T}")
     return R, T
-
+###
+#
+# Parametri della camera creati da opencv2
+#
+###
 def getCameraCal(dir):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     objpoints = []
@@ -198,6 +232,12 @@ def getCameraCal(dir):
 
     return mtx
 
+
+###
+#
+# Funzione da richiamare all'esterno per far partire tutto
+#
+###
 def calibra(dir):
     dir = f"datiLaboratorio/checkboard/{str(dir)}/"
     chessboard_correspondences = getChessboardCorners(dir)
@@ -206,7 +246,7 @@ def calibra(dir):
 
     H = []
     for correspondence in chessboard_correspondences_normalized:
-        H.append(compute_view_based_homography(correspondence))
+        H.append(compute_homography(correspondence))
 
     CameraIntrinsic = get_intrinsic_parameters(H)
     CalcolataDaCV2 = getCameraCal(dir)
@@ -226,5 +266,7 @@ def calibra(dir):
     print("<----------------->")
     print("Errore")
     print(Errore)
+
+    return CameraIntrinsic, CalcolataDaCV2, Errore
 
 

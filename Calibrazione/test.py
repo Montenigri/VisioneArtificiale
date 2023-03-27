@@ -210,7 +210,7 @@ def getRT(K,H):
     r3 = np.cross(r1,r2)
     T = np.transpose(lam * np.matmul(np.linalg.inv(K),h3))
     R = np.transpose(np.array([r1,r2,r3]))
-    #print (f"r1: {r1}\n r2: {r2}\n r3:{r3}\n R: {R}\nt: {T}")
+    #print (f"r1: {r1}\n r2: {r2}\n r3:{r3}\n R: {R}\n t: {T}")
     return R, T
 
 def calibra(dir):
