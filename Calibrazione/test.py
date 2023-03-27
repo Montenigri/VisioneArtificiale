@@ -222,6 +222,11 @@ def calibra(dir):
     return get_intrinsic_parameters(H)
 
 
+
+
+
+
+
 def crossvalidation(fold, corrispondenze):
     multiply = int(len(corrispondenze)/4)
     a = int(multiply * fold)
@@ -230,7 +235,24 @@ def crossvalidation(fold, corrispondenze):
     training = [i for i in corrispondenze if i not in validation]
     errore = []
 
-     
 
-calibra(4)
-#getRT(K = calibra(4), H=getImageHomography())
+
+
+#fare un array di array dove si trovano assieme i punti 2d e 3d, in modo da fare lo shuffle tutto assieme
+#Fare shuffle
+#Dividere il set in modo da avere più cose, servono almeno 3 set di punti prima di avere una k, quindi operare come sopra come se fossero più immagini
+
+
+def findHomographyForLab(_3d,_2d):
+    _3d = np.array([ [-200,100], [-200,0], [-200,-100], [-100,-100], [-100,0], [-100,100] ,[0,-100], [0,0], [0,100], [100,-100], [0,100], [100,100], [100,-200], [0,-200], [-100,-200], [-300,0]])
+    _2d = np.array([ [774,338], [621,336], [470,332], [438,400], [614,402], [790,404], [396,485], [607,492], [817,495], [340,615], [595,622], [858,628], [120,594], [208,473], [276,393], [626,288]])
+    
+
+    homography, mask = cv2.findHomography(_3d,_2d)
+    intrinsic = get_intrinsic_parameters(np.array([homography]))
+    print(intrinsic)
+    return homography
+
+findHomographyForLab(None,None)
+#calibra(4)
+#getRT(K = calibra(4), H=findHomographyForLab())
