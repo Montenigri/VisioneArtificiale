@@ -213,12 +213,12 @@ def calibra(dir):
     for correspondence in chessboard_correspondences_normalized:
         H.append(compute_view_based_homography(correspondence))
 
-    #CameraIntrinsic = get_intrinsic_parameters(H)
-    #CalcolataDaCV2 = getCameraCal(dir)
-    #Errore = np.absolute(CameraIntrinsic  - CalcolataDaCV2)
-    #print (Errore)
+    CameraIntrinsic = get_intrinsic_parameters(H)
+    CalcolataDaCV2 = getCameraCal(dir)
+    Errore = np.absolute(CameraIntrinsic  - CalcolataDaCV2)
+    print (Errore)
     return get_intrinsic_parameters(H)
 
-#calibra(4)
+calibra(16)
 
-getRT(K = calibra(4), H=getImageHomography())
+#getRT(K = calibra(4), H=getImageHomography())
