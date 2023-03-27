@@ -201,19 +201,23 @@ def getImageHomography():
 
 def getRT(K,H):
     H = H[0]
-    RT = np.matmul(np.linalg.inv(K), H)
-    print("RT    " , RT)
-    R = RT[:,:2]
-    print("R   ",R)
-    T = RT[:,2]
-    print("T   ",T)
+    h1 = H[:,0]
+    h2 = H[:,1]
+    h3 = H[:,2]
+    lam = 1/np.linalg.norm(np.matmul(np.linalg.inv(K),h1))
+    r1 = lam * np.matmul(np.linalg.inv(K),h1)
+    r2 = lam * np.matmul(np.linalg.inv(K),h2)
+    r3 = np.cross(r1,r2)
+    T = np.transpose(lam * np.matmul(np.linalg.inv(K),h3))
+    R = np.transpose(np.array([r1,r2,r3]))
+    #print (f"r1: {r1}\n r2: {r2}\n r3:{r3}\n R: {R}\nt: {T}")
     return R, T
 
 def calibra(dir):
     dir = f"datiLaboratorio/checkboard/{str(dir)}/"
     
     chessboard_correspondences_normalized = getChessborda(dir)
-    print(chessboard_correspondences_normalized)
+    #print(chessboard_correspondences_normalized)
     H = []
     for correspondence in chessboard_correspondences_normalized:
         H.append(compute_view_based_homography(correspondence))
@@ -224,6 +228,6 @@ def calibra(dir):
     #print (Errore)
     return get_intrinsic_parameters(H)
 
-calibra(4)
+#calibra(4)
 
-#getRT(K = calibra(4), H=getImageHomography())
+getRT(K = calibra(4), H=getImageHomography())
