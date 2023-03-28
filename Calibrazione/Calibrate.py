@@ -168,11 +168,11 @@ def get_intrinsic_parameters(H_R):
     b = vh[np.argmin(s)]
 
     vc = (b[1]*b[3] - b[0]*b[4])/(b[0]*b[2] - b[1]**2)
-    l = b[5] - (b[3]**2 + vc*(b[1]*b[2] - b[0]*b[4]))/b[0]
+    l = b[5] - (b[3]**2 + vc*(b[1]*b[3] - b[0]*b[4]))/b[0]
     alpha = np.sqrt((l/b[0]))
-    beta = np.sqrt(((l*b[0])/(b[0]*b[2] - b[1]**2)))
-    gamma = -1*((b[1])*(alpha**2) *(beta/l))
-    uc = (gamma*vc/beta) - (b[3]*(alpha**2)/l)
+    beta = np.sqrt( ( (l*b[0]) / (b[0]*b[2] - b[1]**2) ) )
+    gamma = -1*( ( b[1]*(alpha**2)*beta)/l )
+    uc = ((gamma*vc)/beta) - ((b[3]*(alpha**2))/l)
 
     A = np.array([
             [alpha, gamma, uc],
@@ -271,6 +271,7 @@ def getImageHomography():
 ###
 
 def draw_ground(img, R, T, K):
+    dist = np.zeros(5)
     xg = np.arange(-5, 10, 0.5) 
     yg = np.arange(-5, 10, 0.5) 
     xx, yy = np.meshgrid(xg, yg)
@@ -285,7 +286,7 @@ def draw_ground(img, R, T, K):
     points[:,1] = yy 
     points[:,2] = np.zeros((dim))
 
-    ground, _ = cv2.projectPoints(points, R, T, K)
+    ground, _ = cv2.projectPoints(points, R, T, K, dist)
     ground = np.squeeze(ground).astype(np.int32)
 
     img_to_show_res = img.copy()
@@ -293,7 +294,7 @@ def draw_ground(img, R, T, K):
         img_to_show_res = cv2.circle(img_to_show_res, p, 3, (255, 0, 0) )
 
     cv2.imshow("ground", img_to_show_res)
-    cv2.waitKey(1)
+    cv2.waitKey(0)
     cv2.destroyAllWindows()
 ###
 #
@@ -316,13 +317,15 @@ def calibra(dir):
 
     return CameraIntrinsic, CalcolataDaCV2, Errore
 
-def findHomographyForLab(_3d,_2d):
-    _3d = np.array([ [-200,100], [-200,0], [-200,-100], [-100,-100], [-100,0], [-100,100] ,[0,-100], [0,0], [0,100], [100,-100], [0,100], [100,100], [100,-200], [0,-200], [-100,-200], [-300,0]])
+def findHomographyForLab():
+    _3d = np.array([ [-2,1], [-2,0], [-2,-1], [-1,-1], [-1,0], [-1,1] ,[0,-1], [0,0], [0,1], [1,-1], [0,1], [1,1], [1,-2], [0,-2], [-1,-2], [-3,0]])
     _2d = np.array([ [774,338], [621,336], [470,332], [438,400], [614,402], [790,404], [396,485], [607,492], [817,495], [340,615], [595,622], [858,628], [120,594], [208,473], [276,393], [626,288]])
-    k = calibra(16)
+    k,_,_ = calibra(16)
+
     h = homographyFun(_3d,_2d)
     R, T = getRT(H=h, K=k)
 
     img = cv2.imread("datiLaboratorio/lab/punto13186.jpg")
    
     draw_ground(img, R, T, k)
+
