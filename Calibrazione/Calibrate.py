@@ -212,7 +212,7 @@ def getRT(K,H):
 #
 ###
 def getCameraCal(dir):
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1000, 0.0001)
     objpoints = []
     imgpoints = [] 
     
@@ -226,7 +226,7 @@ def getCameraCal(dir):
         if ret == True:
             objpoints.append(objp)
             # refining pixel coordinates for given 2d points.
-            corners2 = cv2.cornerSubPix(gray, corners, (11,11),(-1,-1), criteria)
+            corners2 = cv2.cornerSubPix(gray, corners, (6,6),(1,1), criteria)
             
             imgpoints.append(corners2)
 
