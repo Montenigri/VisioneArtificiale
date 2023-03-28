@@ -6,13 +6,10 @@ from scipy import optimize as opt
 PATTERN_SIZE = (9, 6)
 SQUARE_SIZE = 1.0 
 
-
 ###
-#
 #
 # get_camera_images raccoglie tutte le foto e ritorna una lista composta dal path dell'immagine
 # e dall'oggetto cv2 dell'immagine,a partire da una directory
-#
 #
 ###
 def get_camera_images(dir):
@@ -158,7 +155,6 @@ def v_pq(p, q, H):
 ###
 
 def get_intrinsic_parameters(H_R):
-    
     M = len(H_R)
     V = np.zeros((2*M, 6), np.float64)
 
@@ -183,7 +179,6 @@ def get_intrinsic_parameters(H_R):
             [0, beta, vc],
             [0, 0, 1.0],
         ])
-    
     return A
 
 
@@ -194,7 +189,7 @@ def get_intrinsic_parameters(H_R):
 ###
 
 def getRT(K,H):
-    H = H[0]
+    #H = H[0]
     h1 = H[:,0]
     h2 = H[:,1]
     h3 = H[:,2]
@@ -202,10 +197,25 @@ def getRT(K,H):
     r1 = lam * np.matmul(np.linalg.inv(K),h1)
     r2 = lam * np.matmul(np.linalg.inv(K),h2)
     r3 = np.cross(r1,r2)
-    T = np.transpose(lam * np.matmul(np.linalg.inv(K),h3))
+    T =lam * np.matmul(np.linalg.inv(K),h3)
     R = np.transpose(np.array([r1,r2,r3]))
     #print (f"r1: {r1}\n r2: {r2}\n r3:{r3}\n R: {R}\nt: {T}")
     return R, T
+
+
+def homographyFun(_2d,_3d):
+    Ar = 2*len(_2d)
+    Am = np.zeros((Ar,9))
+    for i in range (len(_2d)):
+        pixelU,pixelV = _2d[i]
+        coordinataX, coordinataY = _3d[i]
+        Am[2*i]= np.array( [coordinataX,coordinataY,1,0,0,0, -pixelU*coordinataX, -pixelU*coordinataY, -pixelU] )
+        Am[2*i + 1]= np.array( [ 0, 0, 0, coordinataX, coordinataY, 1, -pixelV*coordinataX, -pixelV*coordinataY, -pixelV] )
+    u, s, vh = np.linalg.svd(Am)
+    vh = vh[np.argmin(s)]
+    vh = vh.reshape(3, 3)
+    
+    return vh
 ###
 #
 # Parametri della camera creati da opencv2
@@ -254,29 +264,11 @@ def getImageHomography():
     for correspondence in chessboard_correspondences_normalized:
         H.append(compute_homography(correspondence) )
     return H
-
 ###
 #
-# Funzione da richiamare all'esterno per far partire tutto
+# Funzione che crea la griglia e la stampa sull'immagine
 #
 ###
-def calibra(dir):
-    dir = f"datiLaboratorio/checkboard/{str(dir)}/"
-    chessboard_correspondences = getChessboardCorners(dir)
-        
-    chessboard_correspondences_normalized = normalize_points(chessboard_correspondences)
-
-    H = []
-    for correspondence in chessboard_correspondences_normalized:
-        H.append(compute_homography(correspondence))
-
-    CameraIntrinsic = get_intrinsic_parameters(H)
-    CalcolataDaCV2 = getCameraCal(dir)
-    Errore = np.absolute(CameraIntrinsic  - CalcolataDaCV2)
-
-    return CameraIntrinsic, CalcolataDaCV2, Errore
-
-
 
 def draw_ground(img, R, T, K):
     xg = np.arange(-5, 10, 0.5) 
@@ -303,5 +295,34 @@ def draw_ground(img, R, T, K):
     cv2.imshow("ground", img_to_show_res)
     cv2.waitKey(1)
     cv2.destroyAllWindows()
-    
+###
+#
+# Funzione da richiamare all'esterno per far partire tutto
+#
+###
+def calibra(dir):
+    dir = f"datiLaboratorio/checkboard/{str(dir)}/"
+    chessboard_correspondences = getChessboardCorners(dir)
+        
+    chessboard_correspondences_normalized = normalize_points(chessboard_correspondences)
 
+    H = []
+    for correspondence in chessboard_correspondences_normalized:
+        H.append(compute_homography(correspondence))
+
+    CameraIntrinsic = get_intrinsic_parameters(H)
+    CalcolataDaCV2 = getCameraCal(dir)
+    Errore = np.absolute(CameraIntrinsic  - CalcolataDaCV2)
+
+    return CameraIntrinsic, CalcolataDaCV2, Errore
+
+def findHomographyForLab(_3d,_2d):
+    _3d = np.array([ [-200,100], [-200,0], [-200,-100], [-100,-100], [-100,0], [-100,100] ,[0,-100], [0,0], [0,100], [100,-100], [0,100], [100,100], [100,-200], [0,-200], [-100,-200], [-300,0]])
+    _2d = np.array([ [774,338], [621,336], [470,332], [438,400], [614,402], [790,404], [396,485], [607,492], [817,495], [340,615], [595,622], [858,628], [120,594], [208,473], [276,393], [626,288]])
+    k = calibra(16)
+    h = homographyFun(_3d,_2d)
+    R, T = getRT(H=h, K=k)
+
+    img = cv2.imread("datiLaboratorio/lab/punto13186.jpg")
+   
+    draw_ground(img, R, T, k)

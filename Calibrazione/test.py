@@ -7,7 +7,7 @@ PATTERN_SIZE = (9, 6)
 SQUARE_SIZE = 1.0 
 
 def get_camera_images(dir):
-    images = glob.glob(dir + "*.jpeg")
+    images = glob.glob(f"{dir}/*.jpeg")
     images = sorted(images)
     for each in images:
         yield (each, cv2.imread(each, 0))
@@ -160,8 +160,10 @@ def getCameraCal(dir):
     objp = np.zeros((1, PATTERN_SIZE[0] * PATTERN_SIZE[1], 3), np.float32)
     objp[0,:,:2] = np.mgrid[0:PATTERN_SIZE[0], 0:PATTERN_SIZE[1]].T.reshape(-1, 2)
     getImage = get_camera_images(dir)
+    shape = 0
     for (path, each) in getImage:
         gray = each
+        shape = gray.shape[::-1]
         ret, corners = cv2.findChessboardCorners(gray, PATTERN_SIZE, cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
         
         if ret == True:
@@ -170,10 +172,10 @@ def getCameraCal(dir):
             corners2 = cv2.cornerSubPix(gray, corners, (11,11),(-1,-1), criteria)
             
             imgpoints.append(corners2)
+    #_, gray = getImage[0]
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, shape,None,None)
 
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
-
-    return mtx
+    return mtx, rvecs, tvecs
 
 def getChessborda(dir):
     chessboard_correspondences = getChessboardCorners(dir)
@@ -192,7 +194,6 @@ def getImageHomography():
     return H
 
 def getRT(K,H):
-    H = H[0]
     h1 = H[:,0]
     h2 = H[:,1]
     h3 = H[:,2]
@@ -201,31 +202,27 @@ def getRT(K,H):
     r2 = lam * np.matmul(np.linalg.inv(K),h2)
     r3 = np.cross(r1,r2)
     T = np.transpose(lam * np.matmul(np.linalg.inv(K),h3))
+    #T = lam * np.matmul(np.linalg.inv(K),h3)
     R = np.transpose(np.array([r1,r2,r3]))
-    #print (f"r1: {r1}\n r2: {r2}\n r3:{r3}\n R: {R}\n t: {T}")
+    #R = np.array([r1,r2,r3])
+    print("K\n",K,"\n H \n",H,"\n R \n",R,"\n T \n",T)
     return R, T
 
 def calibra(dir):
-    dir = f"datiLaboratorio/checkboard/{str(dir)}/"
+    dir = f"datiLaboratorio/checkboard/{dir}/"
     
     chessboard_correspondences_normalized = getChessborda(dir)
     #print(chessboard_correspondences_normalized)
     H = []
     for correspondence in chessboard_correspondences_normalized:
-        print("corr shape: \n",correspondence)
+        #print("corr shape: \n",correspondence)
         H.append(compute_view_based_homography(correspondence))
 
     CameraIntrinsic = get_intrinsic_parameters(H)
     CalcolataDaCV2 = getCameraCal(dir)
     Errore = np.absolute(CameraIntrinsic  - CalcolataDaCV2)
-    print (Errore)
-    return get_intrinsic_parameters(H)
-
-
-
-
-
-
+    #return get_intrinsic_parameters(H)
+    return  CameraIntrinsic, CalcolataDaCV2, Errore
 
 def crossvalidation(fold, corrispondenze):
     multiply = int(len(corrispondenze)/4)
@@ -243,16 +240,64 @@ def crossvalidation(fold, corrispondenze):
 #Dividere il set in modo da avere più cose, servono almeno 3 set di punti prima di avere una k, quindi operare come sopra come se fossero più immagini
 
 
+#calibra(4)
+#getRT(K = calibra(4), H=findHomographyForLab())
+
+def homographyFun(_2d,_3d):
+    Ar = 2*len(_2d)
+    Am = np.zeros((Ar,9))
+    for i in range (len(_2d)):
+        pixelU,pixelV = _2d[i]
+        coordinataX, coordinataY = _3d[i]
+        Am[2*i]= np.array( [coordinataX,coordinataY,1,0,0,0, -pixelU*coordinataX, -pixelU*coordinataY, -pixelU] )
+        Am[2*i + 1]= np.array( [ 0, 0, 0, coordinataX, coordinataY, 1, -pixelV*coordinataX, -pixelV*coordinataY, -pixelV] )
+    u, s, vh = np.linalg.svd(Am)
+    vh = vh[np.argmin(s)]
+    vh = vh.reshape(3, 3)
+    
+    return vh
+
+
+def draw_ground(img, R, T, K):
+    dist = np.zeros(5)
+    xg = np.arange(-100, 300, 1) 
+    yg = np.arange(-100, 300, 1) 
+    xx, yy = np.meshgrid(xg, yg)
+    dim = xx.shape[0]*xx.shape[1]
+    points = np.zeros((dim,3), np.float32)
+    xx = xx.reshape(dim)
+    yy = yy.reshape(dim)
+
+    points[:,0] = xx
+    points[:,1] = yy
+    points[:,2] = np.zeros(dim)
+    print(R)
+    ground, _ = cv2.projectPoints(points, np.zeros((3,)), np.zeros((3,)), K, dist)
+    ground = np.squeeze(ground).astype(np.int32)
+    #print ("R: ", R)
+    #print ("T: ", T)
+    #print ("K: ", K)
+    #print ("ground: ", ground)
+    img_to_show_res = img.copy()
+    for p in ground:
+        img_to_show_res = cv2.circle(img_to_show_res, p, 3, (0, 0, 0) )
+
+    cv2.imshow("ground", img_to_show_res)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
 def findHomographyForLab(_3d,_2d):
     _3d = np.array([ [-200,100], [-200,0], [-200,-100], [-100,-100], [-100,0], [-100,100] ,[0,-100], [0,0], [0,100], [100,-100], [0,100], [100,100], [100,-200], [0,-200], [-100,-200], [-300,0]])
     _2d = np.array([ [774,338], [621,336], [470,332], [438,400], [614,402], [790,404], [396,485], [607,492], [817,495], [340,615], [595,622], [858,628], [120,594], [208,473], [276,393], [626,288]])
-    
+    k = calibra(16)
+    h = homographyFun(_3d,_2d)
+    R, T = getRT(H=h, K=k)
 
-    homography, mask = cv2.findHomography(_3d,_2d)
-    intrinsic = get_intrinsic_parameters(np.array([homography]))
-    print(intrinsic)
-    return homography
+    img = cv2.imread("datiLaboratorio/lab/punto13186.jpg")
+   
+    draw_ground(img, R, T, k)
 
-findHomographyForLab(None,None)
-#calibra(4)
-#getRT(K = calibra(4), H=findHomographyForLab())
+
+
+print(calibra("16"))
