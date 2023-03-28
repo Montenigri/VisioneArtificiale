@@ -27,6 +27,7 @@ def get_camera_images(dir):
 #
 ###
 def getChessboardCorners(dir):
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1000, 0.0001)
     objp = np.zeros((PATTERN_SIZE[1]*PATTERN_SIZE[0], 3), dtype=np.float64)
     objp[:, :2] = np.indices(PATTERN_SIZE).T.reshape(-1, 2)
     objp *= SQUARE_SIZE
@@ -40,7 +41,8 @@ def getChessboardCorners(dir):
         if ret:
             corners = corners.reshape(-1, 2)
             if corners.shape[0] == objp.shape[0] :
-                image_points.append(corners)
+                corners2 = cv2.cornerSubPix(each, corners, (6,6),(1,1), criteria)
+                image_points.append(corners2)
                 object_points.append(objp[:,:-1]) #Togliamo Z perché ci interessano i punti nel piano XY
                 correspondences.append([corners.astype(int), objp[:, :-1].astype(int)])
 
@@ -271,21 +273,6 @@ def calibra(dir):
     CameraIntrinsic = get_intrinsic_parameters(H)
     CalcolataDaCV2 = getCameraCal(dir)
     Errore = np.absolute(CameraIntrinsic  - CalcolataDaCV2)
-    #print("<----------------->")
-    #print("<----------------->")
-    #print("<----------------->")
-    #print("Camera Intrinsic")
-    #print(CameraIntrinsic)
-    #print("<----------------->")
-    #print("<----------------->")
-    #print("<----------------->")
-    #print ("Calcolata da CV2")
-    #print(CalcolataDaCV2)
-    #print("<----------------->")
-    #print("<----------------->")
-    #print("<----------------->")
-    #print("Errore")
-    #print(Errore)
 
     return CameraIntrinsic, CalcolataDaCV2, Errore
 
