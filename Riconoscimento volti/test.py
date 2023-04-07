@@ -32,25 +32,25 @@ imgMean /= imgNumber
 imgMean = imgMean.astype(np.uint8)
 
 for key in tagFoto:
-    number = 0
     newValue = []
-
     for im in tagFoto[key]:
         img = cv2.imread(im,0).astype(np.float32)
         eigenvalue= np.linalg.eig(img) 
         nv = [img, eigenvalue]
         newValue.append(nv)
-        
     tagFoto.update({key : newValue})
-startPrint = time.time()
-print (tagFoto)
-endPrint = time.time()
+
+
+
+#startPrint = time.time()
+#print (tagFoto)
+#endPrint = time.time()
+#timePrint= endPrint-startPrint
 
 end = time.time()
 
 timeElapsed = end - start
-timePrint= endPrint-startPrint
 
 print(f"tempo totale: {timeElapsed}")
-print(f"tempo print: {timePrint}")
+#print(f"tempo print: {timePrint}")
 
