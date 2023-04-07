@@ -42,12 +42,15 @@ for key in tagFoto:
         newValue.append(nv)
         
     tagFoto.update({key : newValue})
-
-#print (tagFoto)
+startPrint = time.time()
+print (tagFoto)
+endPrint = time.time()
 
 end = time.time()
 
 timeElapsed = end - start
+timePrint= endPrint-startPrint
 
-print(timeElapsed)
+print(f"tempo totale: {timeElapsed}")
+print(f"tempo print: {timePrint}")
 
