@@ -42,15 +42,14 @@ for key in tagFoto:
 
 
 
-#startPrint = time.time()
-#print (tagFoto)
-#endPrint = time.time()
-#timePrint= endPrint-startPrint
+startPrint = time.time()
+print (tagFoto)
+endPrint = time.time()
+timePrint= endPrint-startPrint
 
 end = time.time()
 
 timeElapsed = end - start
 
 print(f"tempo totale: {timeElapsed}")
-#print(f"tempo print: {timePrint}")
-
+print(f"tempo print: {timePrint}")
