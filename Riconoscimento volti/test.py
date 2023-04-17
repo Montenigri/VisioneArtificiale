@@ -22,61 +22,74 @@ for dir in listDir:
     tagFoto[dir] = imgs
 
 
-
-def violajones(frame):
-    ListOfFaceROI = []
-    faces = face_cascade.detectMultiScale(frame)
+def violajones(im):
+    img = cv2.imread(im,0)
+    faceROI = np.zeros((64,64), dtype=np.float32)
+    faces = face_cascade.detectMultiScale(img)
     for (x, y, w, h) in faces:
-        center = (x + w // 2, y + h // 2)   
-        faceROI = frame[y:y + h, x:x + w]
-        faceROI = faceROI.resize(64,64)
-        ListOfFaceROI.append(faceROI)
-    return ListOfFaceROI
+        faceROI = img[y:y + h, x:x + w]
+        faceROI = cv2.resize(faceROI,(64,64), interpolation=cv2.INTER_LINEAR)
+        
+    return faceROI
 
 
 #centro la faccia trovata tramite viola jones per avere un immagine centrata
-def pad(array):
-    x,y = np.shape(array)
-    x1 = 0
-    y1 = 0
-    x = 64 - x
-    y = 64 - y
-    if x%2 == 1:
-        x -=1
-        x = x/2 
-        x1 = x+1
-    else:
-        x = x/2
-        x1 = x
-    if y%2 == 1:
-        y -=1
-        y = y/2 
-        y1 = y + 1 
-    else:
-        y = y/2
-        y1 = y
-    return np.pad(array , pad_width=((x, x1), (y,y1)), constant_values=0)
 
 faceMean = np.zeros((64,64), dtype=np.float32)
 faceNumber = 0
+listOfArray = []
+
 
 for key in tagFoto:
     for im in tagFoto[key]:
-        img = cv2.imread(im,0)
-        vj = violajones(img)
-        for viola in vj:
-            faceMean += violajones(viola)
-            faceNumber+=1
+        vj = violajones(im)
+        faceMean += vj
+        flat = vj.flat
+        listOfArray.append(flat)
+        faceNumber+=1
 
 faceMean /= faceNumber
 
-faceMean = faceMean.astype(np.uint8)
+#faceMean = faceMean.astype(np.uint8)
+MatrixFlattenedImages = np.vstack(listOfArray)  
+flattenFaceMean = faceMean.flatten()
+
+covArray = []
+
+for key in tagFoto:
+    for im in tagFoto[key]:
+        vj = violajones(im)
+        flat = vj.flatten()
+        covArray.append(flat-flattenFaceMean)
+'''
+def covSub(_1d):
+    return _1d-flattenFaceMean
+
+covArray = np.apply_along_axis(covSub,1,MatrixFlattenedImages)
+'''
+
+def check_symmetric(a, rtol=1e-05, atol=1e-08):
+    return np.allclose(a, a.T, rtol=rtol, atol=atol)
+
+covArray = np.array(covArray)
+cov = np.dot(np.transpose(covArray),covArray)
+cov /= faceNumber
 
 
 
-cv2.imshow("viola" , faceMean)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+
+
+
+#cov = np.cov(MatrixFlattenedImages, faceMean)
+
+#cv2.imshow("viola" , faceMean)
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
+
+#print(cov)
+
+
+
 
 '''
 for key in tagFoto:
