@@ -75,9 +75,14 @@ covArray = np.array(covArray)
 cov = np.dot(np.transpose(covArray),covArray)
 cov /= faceNumber
 
+pca = PCA().fit(cov)
+n_components = 50
+eigenfaces = pca.components_[:n_components]
 
-
-
+for i in range(16):
+    cv2.imshow(f"{i} autofaccia",eigenfaces[i].reshape(64,64))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 #cov = np.cov(MatrixFlattenedImages, faceMean)
