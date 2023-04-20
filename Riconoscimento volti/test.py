@@ -6,6 +6,8 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import pickle
 
+
+'''
 faces_xml = 'haarcascade_frontalface_alt.xml'
 face_cascade = cv2.CascadeClassifier()
 if not face_cascade.load(faces_xml):
@@ -56,14 +58,12 @@ faceMean /= faceNumber
 MatrixFlattenedImages = np.vstack(listOfArray)  
 flattenFaceMean = faceMean.flatten()
 
-'''
 pca = PCA().fit(MatrixFlattenedImages)
 
 
 with open('pca.pkl', 'wb') as pickle_file:
         pickle.dump(pca, pickle_file)
 
-'''
 
 with open('pca.pkl', 'rb') as pickle_file:
     pca = pickle.load(pickle_file)
@@ -99,8 +99,24 @@ axes[1].imshow(MatrixFlattenedImages[best_match].reshape(64,64), cmap="gray")
 axes[1].set_title(f"{faceLabel[best_match]} distanza: {euclidean_distance[best_match]}")
 plt.show()
 
-
+'''
 '''
 Training violajons con una sola foto, poi ricopio la funzione ed aggiungo un array da tornare
 a quel punto cerco il best match
 '''
+
+video = cv2.VideoCapture("video-92820.mp4")
+frames = []
+framenumber=0
+if (video.isOpened()== False):
+    print("Error opening video file")
+while(video.isOpened()):
+  ret, frame = video.read()
+  if ret == True:
+        print(framenumber)
+        framenumber += 1
+        frames.append(frame)
+  else:
+      break
+          
+print (len(frames))
