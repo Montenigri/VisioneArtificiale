@@ -6,6 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+
+# Video extensions
+*.mp4
+
+#Riconoscimento.pkl
+Riconosciuto.pkl
+
 # Distribution / packaging
 .Python
 build/
