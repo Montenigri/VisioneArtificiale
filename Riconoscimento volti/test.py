@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 
-'''
+
 faces_xml = 'haarcascade_frontalface_alt.xml'
 face_cascade = cv2.CascadeClassifier()
 if not face_cascade.load(faces_xml):
@@ -15,108 +15,51 @@ if not face_cascade.load(faces_xml):
     exit(0)
 
 
-root = "foto64x64"
-cwd = os.getcwd()
-listDir = os.listdir(root)
-tagFoto = {}
-
-for dir in listDir:
-    imgs =  glob.glob(f"{root}/{dir}/*.jpg")
-    tagFoto[dir] = imgs
 
 
-def violajones(im):
-    img = cv2.imread(im,0)
+def violajonesMultiple(img):
     faceROI = np.zeros((64,64), dtype=np.float32)
-    faces = face_cascade.detectMultiScale(img)
+    faces = face_cascade.detectMultiScale(img,minNeighbors=5, minSize = (10,10), maxSize=(50,50))
+    listOfFaceROI = []
+    pos =[]
     for (x, y, w, h) in faces:
         faceROI = img[y:y + h, x:x + w]
         faceROI = cv2.resize(faceROI,(64,64), interpolation=cv2.INTER_LINEAR)
-        
-    return faceROI
+        listOfFaceROI.append(faceROI)
+        pos.append([(x, y), (x+w, y+h), (255, 0, 255), 4])
+    return listOfFaceROI, pos
 
 
-#centro la faccia trovata tramite viola jones per avere un immagine centrata
-
-faceMean = np.zeros((64,64), dtype=np.float32)
-faceNumber = 0
-listOfArray = []
-faceLabel = []
-
-for key in tagFoto:
-    for im in tagFoto[key]:
-        vj = violajones(im)
-        faceMean += vj
-        flat = vj.flat
-        listOfArray.append(flat)
-        faceLabel.append(key)
-        faceNumber+=1
-
-faceMean /= faceNumber
-
-#faceMean = faceMean.astype(np.uint8)
-MatrixFlattenedImages = np.vstack(listOfArray)  
-flattenFaceMean = faceMean.flatten()
-
-pca = PCA().fit(MatrixFlattenedImages)
-
-
-with open('pca.pkl', 'wb') as pickle_file:
-        pickle.dump(pca, pickle_file)
-
-
-with open('pca.pkl', 'rb') as pickle_file:
-    pca = pickle.load(pickle_file)
-
-n_components = 4096
-eigenfaces = pca.components_[:n_components]
- 
-# Show the first 16 eigenfaces
-#fig, axes = plt.subplots(4,4,sharex=True,sharey=True,figsize=(8,10))
-#for i in range(16):
-#    axes[i%4][i//4].imshow(eigenfaces[i].reshape(64,64), cmap="gray")
-#plt.show()
-
-
-if "Gabriele_Musso" in faceLabel:
-  print("Element is in the list")
-else:
-  print("Element is not in the list")
-
-weights = eigenfaces @ (MatrixFlattenedImages - pca.mean_).T
-
-vj = violajones("test/0.jpg")
-query = vj.reshape(1,-1)
-query_weight = eigenfaces @ (query - pca.mean_).T
-euclidean_distance = np.linalg.norm(weights - query_weight, axis=0)
-best_match = np.argmin(euclidean_distance)
-print("Best match %s with Euclidean distance %f" % (faceLabel[best_match], euclidean_distance[best_match]))
-# Visualize
-fig, axes = plt.subplots(1,2,sharex=True,sharey=True,figsize=(8,6))
-axes[0].imshow(query.reshape(64,64), cmap="gray")
-axes[0].set_title("Query")
-axes[1].imshow(MatrixFlattenedImages[best_match].reshape(64,64), cmap="gray")
-axes[1].set_title(f"{faceLabel[best_match]} distanza: {euclidean_distance[best_match]}")
-plt.show()
-
-'''
-'''
-Training violajons con una sola foto, poi ricopio la funzione ed aggiungo un array da tornare
-a quel punto cerco il best match
-'''
-
-video = cv2.VideoCapture("video-92820.mp4")
+video = cv2.VideoCapture("Da annotare a mano.mp4")
 frames = []
-framenumber=0
 if (video.isOpened()== False):
     print("Error opening video file")
 while(video.isOpened()):
-  ret, frame = video.read()
-  if ret == True:
-        print(framenumber)
-        framenumber += 1
-        frames.append(frame)
-  else:
-      break
-          
-print (len(frames))
+    ret, frame = video.read()
+    if ret == True:
+            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+    else:
+        break
+
+Count = 0
+faces=[]
+framesF = []
+font = cv2.FONT_HERSHEY_SIMPLEX
+#"Gabriele", "Stefano", "Davide", "Francesco",
+names = ["Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Davide", "Stefano","Francesco", "Davide", "Stefano","Francesco", "Davide", "Stefano","Davide","Francesco", "Stefano","Davide","Francesco", "Stefano","Davide","Francesco", "Stefano","Davide","Francesco", "Stefano", "Francesco","Davide","Stefano","Davide","Francesco","Stefano","Davide","Francesco","Stefano","Davide","Francesco","Gabriele","Stefano","Davide","Francesco","Stefano", "Gabriele", "Francesco", "Davide","Stefano","Davide","Francesco","Stefano","Gabriele","Davide","Francesco","Stefano","Gabriele"]
+for frame in frames:
+    vjMul, pos = violajonesMultiple(frame)
+    for p in pos:
+        px,py = p[0]
+        frame = cv2.putText(frame, names[Count], (px-5,py-5) ,font, 1,(255,255,255),2 )
+        Count+=1
+        frame = cv2.rectangle(frame, p[0],p[1],p[2],p[3])
+    framesF.append(frame)
+
+faces = [item for sublist in faces for item in sublist]
+
+
+Count = 0
+for face in framesF:
+    cv2.imwrite(f"Annotate/frame{Count}.jpg",face)
+    Count+=1
