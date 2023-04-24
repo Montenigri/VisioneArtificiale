@@ -46,14 +46,24 @@ faces=[]
 framesF = []
 font = cv2.FONT_HERSHEY_SIMPLEX
 #"Gabriele", "Stefano", "Davide", "Francesco",
-names = ["Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Stefano", "Davide","Francesco", "Davide", "Stefano","Francesco", "Davide", "Stefano","Francesco", "Davide", "Stefano","Davide","Francesco", "Stefano","Davide","Francesco", "Stefano","Davide","Francesco", "Stefano","Davide","Francesco", "Stefano", "Francesco","Davide","Stefano","Davide","Francesco","Stefano","Davide","Francesco","Stefano","Davide","Francesco","Gabriele","Stefano","Davide","Francesco","Stefano", "Gabriele", "Francesco", "Davide","Stefano","Davide","Francesco","Stefano","Gabriele","Davide","Francesco","Stefano","Gabriele"]
+nomi = ["Gabriele", "Stefano", "Davide", "Francesco"]
+names = []
 for frame in frames:
     vjMul, pos = violajonesMultiple(frame)
     for p in pos:
         px,py = p[0]
-        frame = cv2.putText(frame, names[Count], (px-5,py-5) ,font, 1,(255,255,255),2 )
         Count+=1
         frame = cv2.rectangle(frame, p[0],p[1],p[2],p[3])
+
+        cv2.imshow("faccia", frame)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+        print(nomi)
+        Nnome = int(input("inserisci indice del nome"))
+        names.append(nomi[Nnome])
+        frame = cv2.putText(frame, nomi[Nnome], (px-5,py-5) ,font, 1,(255,255,255),2 )
+
     framesF.append(frame)
 
 faces = [item for sublist in faces for item in sublist]
