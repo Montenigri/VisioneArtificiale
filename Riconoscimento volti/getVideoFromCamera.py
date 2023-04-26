@@ -13,7 +13,7 @@ cap = cv.VideoCapture(src)
 fourcc = cv.VideoWriter_fourcc(*'mp4v')
 name = f"video-{str(datetime.now().hour)+str(datetime.now().minute) + str(datetime.now().second)}.mp4"
 #La risoluzione deve essere uguale a quella della videocamera, altrimenti non salva nulla
-out = cv.VideoWriter(name, fourcc, 90.0, (1280, 720))
+out = cv.VideoWriter(name, fourcc, 20.0, (1280, 720))
 framesRecorded = 0
 font = cv.FONT_HERSHEY_SIMPLEX
 if cap is None or not cap.isOpened():
@@ -31,7 +31,7 @@ while cap.isOpened():
     framesRecorded += 1
     cv.putText(frame,f'{framesRecorded}',(25,25), font, 1,(255,255,255),2,cv.LINE_AA)
     cv.imshow('frame', frame)
-    if cv.waitKey(1) == ord('q') or framesRecorded==2700:
+    if cv.waitKey(1) == ord('q') or framesRecorded==40:
         break
 # Release everything if job is finished
 cap.release()
