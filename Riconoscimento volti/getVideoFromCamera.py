@@ -2,7 +2,6 @@ import cv2 as cv
 from datetime import datetime
 import time
 
-time.sleep(5)
 
 src = 'rtsp://CV2023:Studente123@147.163.26.182:554/Streaming/Channels/101'
 #src = 0
