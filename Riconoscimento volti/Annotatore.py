@@ -41,7 +41,6 @@ Count = 0
 faces=[]
 framesF = []
 font = cv2.FONT_HERSHEY_SIMPLEX
-#"Gabriele", "Stefano", "Davide", "Francesco",
 nomi = ["Gabriele", "Stefano", "Davide", "Francesco"]
 names = []
 for frame in frames:
@@ -62,9 +61,6 @@ for frame in frames:
         
 
     framesF.append(frame)
-
-faces = [item for sublist in faces for item in sublist]
-
 
 Count = 0
 for face in framesF:
