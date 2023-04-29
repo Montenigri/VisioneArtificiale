@@ -8,7 +8,7 @@ __pycache__/
 
 
 # Video extensions
-*.mp4
+# *.mp4
 
 #Riconoscimento.pkl
 Riconosciuto.pkl
