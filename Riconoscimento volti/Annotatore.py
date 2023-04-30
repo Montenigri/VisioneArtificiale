@@ -1,3 +1,10 @@
+###
+#
+# Questo script serve per annotare rapidamente sui frame i volti manualmente, in un array sono presenti i nomi dei presenti
+# vengono quindi proposti man mano i volti e poi è possibile selezionare il nome corrispondente
+#
+###
+
 import numpy as np
 import cv2
 
