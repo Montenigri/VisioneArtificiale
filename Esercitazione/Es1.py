@@ -13,7 +13,6 @@ x_test = x_test.astype("float32")
 
 x_train =(x_train / 255) - 0.5 
 x_test = (x_test / 255) - 0.5 
-
 X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.20, random_state=42)
 
 
@@ -72,3 +71,8 @@ model.save_weights('model.h5')
 
 #batch 256 , epochs:10
 #[0.2862311899662018, 0.8986999988555908] due layer  conv2d, 32-16
+
+
+
+python -c "import tensorflow as tf; print(tf.config.list_physical_devices(device_type=None))"
+
