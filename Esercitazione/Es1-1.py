@@ -21,8 +21,7 @@ X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.
 #x_test = x_test.reshape((-1, 784))
 
 model = Sequential()
-model.add(Conv2D(256, (3, 3), activation='relu', input_shape=(28, 28, 1)))
-model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)))
 model.add(Conv2D(16, (3, 3), activation='relu'))
 
 model.add(Flatten())
@@ -41,7 +40,7 @@ callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3)
 #Si può mettere la callback per uscire prima
 
 model.fit(
-    X_train, to_categorical(Y_train), epochs=10, 
+    X_train, to_categorical(Y_train), epochs=100, 
     batch_size=64, shuffle=True, 
     validation_data=(X_val,to_categorical(Y_val)),
     callbacks=callback
@@ -53,7 +52,7 @@ results = model.evaluate(
 )
 
 print(results)
-model.save_weights('model.h5')
+model.save_weights('modelEs1-1.h5')
 
 #batch: 32, epochs:10
 #[0.36627647280693054, 0.8995000123977661] due layer  conv2d, 32-16
