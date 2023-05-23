@@ -13,7 +13,6 @@ x_test = x_test.astype("float32")
 
 x_train =(x_train / 255) - 0.5 
 x_test = (x_test / 255) - 0.5 
-
 X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.20, random_state=42)
 
 
@@ -22,9 +21,8 @@ X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.
 #x_test = x_test.reshape((-1, 784))
 
 model = Sequential()
-model.add(Conv2D(128, (3, 3), activation='relu', input_shape=(28, 28, 1)))
-model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(Conv2D(8, (3, 3), activation='relu'))
+model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)))
+model.add(Conv2D(16, (3, 3), activation='relu'))
 
 model.add(Flatten())
 model.add(Dense(10, activation='softmax'))
@@ -42,7 +40,7 @@ callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3)
 #Si può mettere la callback per uscire prima
 
 model.fit(
-    X_train, to_categorical(Y_train), epochs=10, 
+    X_train, to_categorical(Y_train), epochs=100, 
     batch_size=64, shuffle=True, 
     validation_data=(X_val,to_categorical(Y_val)),
     callbacks=callback
@@ -54,7 +52,7 @@ results = model.evaluate(
 )
 
 print(results)
-model.save_weights('model.h5')
+model.save_weights('modelEs1-1.h5')
 
 #batch: 32, epochs:10
 #[0.36627647280693054, 0.8995000123977661] due layer  conv2d, 32-16
@@ -64,6 +62,8 @@ model.save_weights('model.h5')
 #[0.28579914569854736, 0.9077000021934509] due layer  conv2d, 32-16
 #[0.29426005482673645, 0.9010000228881836] due layer conv2d, 32-8
 #[0.295382022857666, 0.9010000228881836] tre layer conv2d, 32-16-8
+#[0.29189619421958923, 0.9010999798774719] tre layer conv2d, 128-64-8
+#[0.325798362493515, 0.9059000015258789 tre layer conv2d, 256-64-16
 #[0.2905367314815521, 0.8991000056266785] due layer, 64-8
 #[0.3112574815750122, 0.902400016784668] due layer  conv2d, 128-16
 
