@@ -28,13 +28,13 @@ model.add(Dropout(0.05))
 
 model.add(Conv2D(16, (3, 3), activation='relu'))  
 model.add(BatchNormalization(axis=1, synchronized = True))
-model.add(MaxPooling2D(pool_size=(2, 2), strides=None))
+#model.add(MaxPooling2D(pool_size=(2, 2), strides=None))
 model.add(Dropout(0.05))
 
 
 model.add(Conv2D(16, (3, 3), activation='relu'))  
 model.add(BatchNormalization(axis=1, synchronized = True))
-#model.add(MaxPooling2D(pool_size=(2, 2), strides=None))
+model.add(MaxPooling2D(pool_size=(2, 2), strides=None))
 model.add(Dropout(0.05))
 
 model.add(Flatten())
@@ -50,7 +50,7 @@ model.compile(
 model.build()
 model.summary()
 
-callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3)
+callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=2)
 #Si può mettere la callback per uscire prima
 
 
