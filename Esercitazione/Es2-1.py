@@ -75,7 +75,7 @@ def gen(lista):
             src = cv2.VideoCapture(i[0])
             ret, frame = src.read()
             count = 0
-            while ret
+            while ret:
                 result.append(cv2.resize(frame, (160, 120)))
                 count+=1
             results.append(random.sample(result, 30))
