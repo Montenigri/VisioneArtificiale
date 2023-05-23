@@ -67,6 +67,10 @@ def split_data(groups):
 
 
 #Manca la label
+#Far ritornare liste di dimensione della batch desiderata
+#In pratica aggiungere un parametro dimensione in input
+#Fare shuffle della lista
+
 def gen(lista):
     while True:
         results = []
