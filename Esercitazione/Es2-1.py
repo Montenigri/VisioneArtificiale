@@ -46,11 +46,14 @@ class dataGenerator(keras.utils.Sequence):
         y_data = []
         for i,_ in enumerate(list_IDs_temp):
             batchSamples = self.data.iloc[i,0]
-            y = self.data.iloc[i,1]
+        y = self.data.iloc[i,1]
         temp_data_list = []
         #Il problema è qui, con le immagini è facile, con i video meno
         #Preprocessing che mi divide tutti i video in frame scalati (?)
         #Però deve caricare tutto il video per forza
+
+        #Faccio diventare ogni video una serie di immagini, passo la serie di immagini con la label,
+        #La rete deve avere il blocco per gestire la temporabilità delle immagini
         for img in batchSamples:
             try:
                 image = cv2.imread(img,0)
@@ -68,6 +71,7 @@ class dataGenerator(keras.utils.Sequence):
 #Devo modificare il generatore affinché presa una lista faccia la generazione solo su quella, datagen deve fare quello che faceva il generatore fatto a manina
 #Devo caricare i frame invece delle foto singole, quindi a mano devo caricare n frame e poi andare avanti
 #Esempio https://gist.github.com/metal3d/f671c921440deb93e6e040d30dd8719b#:~:text=def%20__openframes(self%2C%20classname%2C%20file)%3A
+#https://www.tensorflow.org/tutorials/load_data/video
 
 #Il secondo giro del generatore torna 0 elementi e rompe tutto, questo è possibilmente dato dall'apertura del video,
 #trovare un modo per chiuderlo e poi riaprire il prossimo, magari svuotando 
@@ -183,23 +187,13 @@ files = load_groups("UCF11_updated_mpg")
 fileList = get_file_list(files)
 train, val, test = split_data(fileList)
 
-'''
-X_val = []
-Y_val = []
-for i in val:
-    X_val.append(i[0])
-    Y_val.append(i[1])
-Y_val = to_categorical(Y_val)
 
-X_test = []
-Y_test = []
-for i in test:
-    X_test.append(i[0])
-    Y_test.append(i[1])
+#Devo creare tre generatori con le liste differenti, in modo da fare un generatore per il train, 
+# uno per il validation ed uno per il test
+trainGen = dataGenerator()
+valGen = dataGenerator()
+testGen = dataGenerator()
 
-Y_test = to_categorical(Y_test)
-
-'''
 model = createModel((32,80,60,3))
 model.build()
 model.summary()
