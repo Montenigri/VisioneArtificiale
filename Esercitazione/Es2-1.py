@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers
 from keras.models import Sequential
-from keras.layers import Conv3D, Flatten, Dense,BatchNormalization,MaxPooling3D
+from keras.layers import Conv2D, Flatten, Dense,BatchNormalization,MaxPooling2D,TimeDistributed, LTSM
 from keras.utils import to_categorical, Sequence
 import numpy as np
 import math
@@ -14,7 +14,7 @@ import datetime
 random.seed(42)
 np.random.seed(42) 
 
-class dataGenerator(keras.utils.Sequence):
+class dataGenerator(Sequence):
     def __init__(self, lista,batchSize,nRows=80,nCol=60,shuffle):
         self.lista = lista
         self.batchSize = batchSize
@@ -159,16 +159,34 @@ def split_data(groups):
 
 
 
-
+#https://medium.com/smileinnovation/how-to-work-with-time-distributed-data-in-a-neural-network-b8b39aa4ce00
+#Da rifare per mettere i dati distribuiti nel tempo
 def createModel(inputshape):
 
     model = Sequential()
 
-    model.add(Conv3D(16, (3,3,3), activation='relu', input_shape=inputshape))
-    model.add(BatchNormalization(axis=1, synchronized = True ))
-    model.add(Conv3D(8, (3,3,3), activation='relu'))
-    model.add(MaxPooling3D(pool_size=(5,5,5)))
-    model.add(Conv3D(8, (3,3,3), activation='relu'))
+    model.add(
+        TimeDistributed(
+            Conv2D(16, (3,3), activation='relu', input_shape=inputshape)
+            )
+        )
+    model.add(
+        TimeDistributed(
+            BatchNormalization(axis=1, synchronized = True )
+            )
+        )
+    model.add(
+        TimeDistributed(
+            Conv2D(8, (3,3), activation='relu')
+            )
+        )
+    model.add(
+        TimeDistributed(
+            MaxPooling2D(pool_size=(5,5))
+            )
+        )
+    #Controllare dimensione della ltsm
+    #model.add(LTSM(1024, activation='relu', return_sequences=False))
     model.add(Flatten())
     model.add(Dense(11, activation='softmax'))
 
