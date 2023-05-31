@@ -6,5 +6,4 @@ from keras.layers import Conv2D, Flatten, Dense
 from keras.utils import to_categorical
 from ultralytics import YOLO
 
-
-
+detect = YOLO ()
