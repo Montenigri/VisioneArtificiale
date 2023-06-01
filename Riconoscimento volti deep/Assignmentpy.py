@@ -42,7 +42,7 @@ def getSets(dataset, percentage=[0.6,0.2]):
     trainLen = floor(percentage[0]*length)
     valLen = floor(percentage[1]*length) + trainLen
     for i in dataset:
-            i[0] = findFaces(i[0])
+            i[0] = findFaces(cv2.imread(i[0]))
     train = dataset[:trainLen]
     val = dataset[trainLen:valLen] 
     test  = dataset [valLen:]
@@ -50,24 +50,25 @@ def getSets(dataset, percentage=[0.6,0.2]):
     return train, val, test
 
 
-def findFaces(path):
-    im1 = cv2.imread(path)
-    img_test = detect.predict(source=im1)
+def findFaces(frame):
+    img_test = detect.predict(source=frame,max_det=10)
     faces = []
+    boxesDetect = []
     for result in img_test:
         boxes = result.boxes  
         boxes = boxes.numpy()
-        face = im1[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
+        face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
         face = cv2.resize(face, (64,64))
-        faces.append()
-    return faces  
+        faces.append(face)
+        boxesDetect.append(boxes)
+    return faces, boxesDetect
 
 def splitXY(set):
     x=[]
     y=[]
     for i in set:
-        x = i[0]
-        y = i[1]
+        x.append(i[0])
+        y.append(i[1]) 
     return x,y
 
 
@@ -123,3 +124,46 @@ model.fit(
 
 #qui dobbiamo ciclare ogni frame del video, per ogni frame ritagliare il volto
 #passarlo alla rete neurale, farlo riconoscere e poi attaccare la label all'immagine
+
+def classificatore(frames):
+    #Per mantenere l'univocità dei volti sui frame, ciclo singolamente i frame per poi inserire le
+    #box ed i nomi
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    for f in frames:
+        faces,boxes = findFaces(f)
+        #https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
+        predict = model.predict(faces)
+        for (boxe,pred) in zip(boxes, predict):
+            f = cv2.putText(f,nomi[int(pred)], (boxe.xyxy[0][1]-5,boxe.xyxy[0][3]-5),font, 1,(255,255,255),2)
+            f = cv2.rectangle(f, (boxe.xyxy[0][1], boxe.xyxy[0][3]), (boxe.xyxy[0][0], boxe.xyxy[0][2]), (255, 0, 255), 4)
+        #Qua da vedere che viene restituito per poi attaccare i nomi alle facce e stamparle sul video
+    return frames
+    
+
+#fare tutto in una sola volta
+
+#Raccolgo i frame e li passo al classificatore
+video = cv2.VideoCapture("Video finale senza riconoscimento.mp4")
+frames = []
+if (video.isOpened()== False):
+    print("Error opening video file")
+while(video.isOpened()):
+  ret, frame = video.read()
+  if ret == True:
+        frames.append(frame)
+  else:
+      break
+
+results = classificatore(frames)
+
+height, width = results[0].shape
+size = (width,height)
+
+fourcc = -1 
+
+out15 = cv2.VideoWriter('project_video_finale.mp4',fourcc, 15, size)
+
+for i in results:
+    out15.write(i)
+out15.release()
