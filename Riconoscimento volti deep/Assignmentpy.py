@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers
 from keras.models import Sequential
-from keras.layers import Conv2D, Flatten, Dense, MaxPool2d, Dropout,RandomBrightness,RandomRotation,RandomFlip
+from keras.layers import Conv2D, Flatten, Dense, MaxPool2d, Dropout,RandomBrightness,RandomRotation,RandomFlip,RandomZoom
 from keras.utils import to_categorical
 from ultralytics import YOLO
 import cv2
@@ -31,6 +31,8 @@ def getDataset(root="train"):
         for k in tagFoto:
             if k[1] == nomi[i]:
                 k[1] = i
+                
+    np.random.shuffle(tagFoto)
     return tagFoto
 
 
@@ -81,15 +83,15 @@ X_test, Y_test = splitXY(test)
 #Dobbiamo fare data augmentation qui
 
 data_augmentation = tf.keras.Sequential([
-  layers.RandomFlip(),
-  layers.RandomRotation(0.2),
-  layers.RandomBrightness((-0.3,0.3))
+  RandomFlip("horizontal"),
+  RandomRotation(0.2),
+  RandomBrightness((-0.3,0.3)),
+  RandomZoom(.5, .2)
 ])
 
 #A questo punto dobbiamo riconoscere i volti con una rete neurale
 
 model = Sequential()
-model.add(data_augmentation)
 model.add(Conv2D(32, (5, 5), activation='relu', input_shape=(64, 64, 3)))
 model.add(MaxPool2d(pool_size=(2,2)))
 model.add(Conv2D(64, (5, 5), activation='relu'))
