@@ -1,15 +1,17 @@
 import tensorflow as tf
 from tensorflow import keras
-from keras import layers
 from keras.models import Sequential
-from keras.layers import Conv2D, Flatten, Dense, MaxPool2d, Dropout,RandomBrightness,RandomRotation,RandomFlip,RandomZoom
+from keras.layers import Conv2D, Flatten, Dense, MaxPool2D, Dropout,RandomBrightness,RandomRotation,RandomFlip,RandomZoom
 from keras.utils import to_categorical
 from ultralytics import YOLO
 import cv2
 import numpy as np
 import glob
 import os
+from sklearn.utils import shuffle
 from math import floor
+from itertools import chain
+
 
 #https://github.com/derronqi/yolov8-face
 #https://docs.ultralytics.com/
@@ -21,64 +23,64 @@ nomi = ["Davide","Francesco", "Gabriele", "Stefano", "Unknown"]
 def getDataset(root="train"):
 
     listDir = os.listdir(root)
-    tagFoto = []
+    foto = []
+    tag = []
 
     for dir in listDir:
         imgs =  glob.glob(f"{root}/{dir}/*.jpg")
-        tagFoto.append([imgs,dir])
+        dirs = [dir]*len(imgs)
+        foto = list(chain(foto,imgs))
+        tag = list(chain(tag,dirs))
 
-    for i in range(nomi):
-        for k in tagFoto:
-            if k[1] == nomi[i]:
-                k[1] = i
+    for k in range(len(tag)):
+        for i in range(len(nomi)):
+            if tag[k] == nomi[i]:
+                tag[k] = i
 
-    np.random.shuffle(tagFoto)
-    return tagFoto
+    tag = list(map(int, tag))
+    shuffle(foto,tag)
+    return foto,tag
 
 
-def getSets(dataset, percentage=[0.6,0.2]):
-    length = len(dataset)
+def getSets(x,y, percentage=[0.6,0.2]):
+    length = len(x)
     
     trainLen = floor(percentage[0]*length)
     valLen = floor(percentage[1]*length) + trainLen
-    for i in dataset:
-            i[0] = findFaces(cv2.imread(i[0]))
-    train = dataset[:trainLen]
-    val = dataset[trainLen:valLen] 
-    test  = dataset [valLen:]
+
+    for i in range(len(x)):
+        x[i],_ = findFaces(cv2.imread(x[i]))
+
+    train = (x[:trainLen],y[:trainLen])
+    val = (x[trainLen:valLen],y[trainLen:valLen]) 
+    test  = (x[valLen:],y[valLen:])
 
     return train, val, test
 
 
 def findFaces(frame):
-    img_test = detect.predict(source=frame,max_det=10)
+    img_test = detect.predict(source=frame,max_det=10,verbose=False)
     faces = []
     boxesDetect = []
     for result in img_test:
         boxes = result.boxes  
         boxes = boxes.numpy()
         face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
+        #Da mettere con padding per non storpiare le facce
         face = cv2.resize(face, (64,64))
-        faces.append(face)
-        boxesDetect.append(boxes)
+        faces = list(chain(faces,face))
+        boxesDetect = list(chain(boxesDetect,boxes))
     return faces, boxesDetect
 
-def splitXY(set):
-    x=[]
-    y=[]
-    for i in set:
-        x.append(i[0])
-        y.append(i[1]) 
-    return x,y
 
 
 #Get dei dati
 
-dataset = getDataset()
-train, val, test = getSets(dataset)
-X_train, Y_train = splitXY(train)
-X_val,Y_val = splitXY(val)
-X_test, Y_test = splitXY(test)
+x,y = getDataset()
+train, val, test = getSets(x,y)
+(X_train, Y_train) = train
+(X_val,Y_val) = val
+(X_test, Y_test) = test
 
 
 #Dobbiamo fare data augmentation qui
@@ -86,7 +88,7 @@ X_test, Y_test = splitXY(test)
 data_augmentation = tf.keras.Sequential([
   RandomFlip("horizontal"),
   RandomRotation(0.2),
-  RandomBrightness((-0.3,0.3)),
+  RandomBrightness((-0.2,0.2)),
   RandomZoom(.1, .1)
 ])
 
@@ -94,9 +96,9 @@ data_augmentation = tf.keras.Sequential([
 
 model = Sequential()
 model.add(Conv2D(32, (5, 5), activation='relu', input_shape=(64, 64, 3)))
-model.add(MaxPool2d(pool_size=(2,2)))
+model.add(MaxPool2D(pool_size=(2,2)))
 model.add(Conv2D(64, (5, 5), activation='relu'))
-model.add(MaxPool2d(pool_size=(2,2)))
+model.add(MaxPool2D(pool_size=(2,2)))
 model.add(Dropout(0.2))
 model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(Flatten())
@@ -130,13 +132,13 @@ def classificatore(frames):
     #box ed i nomi
     font = cv2.FONT_HERSHEY_SIMPLEX
 
-    for f in frames:
-        faces,boxes = findFaces(f)
+    for f in range(len(frames)):
+        faces,boxes = findFaces(frames[f])
         #https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
         predict = model.predict(faces)
         for (boxe,pred) in zip(boxes, predict):
-            f = cv2.putText(f,nomi[int(pred)], (boxe.xyxy[0][1]-5,boxe.xyxy[0][3]-5),font, 1,(255,255,255),2)
-            f = cv2.rectangle(f, (boxe.xyxy[0][1], boxe.xyxy[0][3]), (boxe.xyxy[0][0], boxe.xyxy[0][2]), (255, 0, 255), 4)
+            frames[f] = cv2.putText(frames[f],nomi[int(pred)], (boxe.xyxy[0][1]-5,boxe.xyxy[0][3]-5),font, 1,(255,255,255),2)
+            frames[f] = cv2.rectangle(frames[f], (boxe.xyxy[0][1], boxe.xyxy[0][3]), (boxe.xyxy[0][0], boxe.xyxy[0][2]), (255, 0, 255), 4)
         #Qua da vedere che viene restituito per poi attaccare i nomi alle facce e stamparle sul video
     return frames
     
@@ -167,3 +169,9 @@ out15 = cv2.VideoWriter('project_video_finale.mp4',fourcc, 15, size)
 for i in results:
     out15.write(i)
 out15.release()
+
+
+
+
+#Errore Make sure all arrays contain the same number of samples.
+#Possibilmente ci sono falsi positivi che portano ad avere un numero di facce differente da quello aspettato
