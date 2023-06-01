@@ -31,7 +31,7 @@ def getDataset(root="train"):
         for k in tagFoto:
             if k[1] == nomi[i]:
                 k[1] = i
-                
+
     np.random.shuffle(tagFoto)
     return tagFoto
 
@@ -86,7 +86,7 @@ data_augmentation = tf.keras.Sequential([
   RandomFlip("horizontal"),
   RandomRotation(0.2),
   RandomBrightness((-0.3,0.3)),
-  RandomZoom(.5, .2)
+  RandomZoom(.1, .1)
 ])
 
 #A questo punto dobbiamo riconoscere i volti con una rete neurale
