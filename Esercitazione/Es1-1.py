@@ -5,6 +5,7 @@ from keras.models import Sequential
 from keras.layers import Conv2D, Flatten, Dense
 from keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
+import numpy as np
 
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
 
@@ -15,7 +16,8 @@ x_train =(x_train / 255) - 0.5
 x_test = (x_test / 255) - 0.5 
 X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.20, random_state=42)
 
-
+print(np.shape(x_train))
+print(np.shape(y_train))
 
 #x_train = x_train.reshape((-1, 784))
 #x_test = x_test.reshape((-1, 784))

@@ -11,6 +11,8 @@ import os
 from sklearn.utils import shuffle
 from math import floor
 from itertools import chain
+from tqdm import tqdm
+import pickle
 
 
 #https://github.com/derronqi/yolov8-face
@@ -31,15 +33,17 @@ def getDataset(root="train"):
         dirs = [dir]*len(imgs)
         foto = list(chain(foto,imgs))
         tag = list(chain(tag,dirs))
+        
 
-    for k in range(len(tag)):
+
+    for k in tqdm(range(len(tag)), desc= "Sostituisco nomi con interi"):
         for i in range(len(nomi)):
             if tag[k] == nomi[i]:
                 tag[k] = i
 
     tag = list(map(int, tag))
-    shuffle(foto,tag)
-    return foto,tag
+    foto,tag = shuffle(foto,tag, random_state=42)
+    return foto[:1000],tag[:1000]
 
 
 def getSets(x,y, percentage=[0.6,0.2]):
@@ -48,9 +52,13 @@ def getSets(x,y, percentage=[0.6,0.2]):
     trainLen = floor(percentage[0]*length)
     valLen = floor(percentage[1]*length) + trainLen
 
-    for i in range(len(x)):
-        x[i],_ = findFaces(cv2.imread(x[i]))
+    for i in tqdm(range(len(x)), desc= "Riconoscimento facce"):
+        x[i],_ = findFaces(cv2.imread(x[i]),maxDet=1)
 
+    x = list(map(np.asarray, x))
+    
+    x = np.array(x)
+    y = np.array(y)
     train = (x[:trainLen],y[:trainLen])
     val = (x[trainLen:valLen],y[trainLen:valLen]) 
     test  = (x[valLen:],y[valLen:])
@@ -58,8 +66,8 @@ def getSets(x,y, percentage=[0.6,0.2]):
     return train, val, test
 
 
-def findFaces(frame):
-    img_test = detect.predict(source=frame,max_det=10,verbose=False)
+def findFaces(frame, maxDet = 10):
+    img_test = detect.predict(source=frame,max_det=maxDet,verbose=False)
     faces = []
     boxesDetect = []
     for result in img_test:
@@ -67,9 +75,10 @@ def findFaces(frame):
         boxes = boxes.numpy()
         face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
         #Da mettere con padding per non storpiare le facce
-        face = cv2.resize(face, (64,64))
+        face =  cv2.resize(face, (64,64))
         faces = list(chain(faces,face))
         boxesDetect = list(chain(boxesDetect,boxes))
+    
     return faces, boxesDetect
 
 
@@ -77,7 +86,20 @@ def findFaces(frame):
 #Get dei dati
 
 x,y = getDataset()
+
 train, val, test = getSets(x,y)
+
+'''
+with open("train.pkl","wb") as ds:
+    pickle.dump(train,ds)
+
+with open("val.pkl","wb") as ds:
+    pickle.dump(val,ds)
+
+with open("test.pkl","wb") as ds:
+    pickle.dump(test,ds)
+'''
+
 (X_train, Y_train) = train
 (X_val,Y_val) = val
 (X_test, Y_test) = test
@@ -91,6 +113,17 @@ data_augmentation = tf.keras.Sequential([
   RandomBrightness((-0.2,0.2)),
   RandomZoom(.1, .1)
 ])
+
+Xtrain = []
+Ytrain = []
+for i in tqdm(range(len(X_train)), desc= "data augmentation"):
+        Xtrain.append(data_augmentation(X_train[i]))
+        Xtrain.append(X_train[i])
+        Ytrain.append(Y_train[i])
+        Ytrain.append(Y_train[i])
+
+X_train = np.array(Xtrain)
+Y_train = np.array(Ytrain)
 
 #A questo punto dobbiamo riconoscere i volti con una rete neurale
 
@@ -115,6 +148,8 @@ model.summary()
 
 callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3)
 
+
+
 model.fit(
     X_train, to_categorical(Y_train), epochs=100, 
     batch_size=64, shuffle=True, 
@@ -122,8 +157,13 @@ model.fit(
     callbacks=callback
     )
 
+#model.save_weights('modelClassificatore.h5')
 
-
+results = model.evaluate(
+  X_test,
+  to_categorical(Y_test)
+)
+print(results)
 #qui dobbiamo ciclare ogni frame del video, per ogni frame ritagliare il volto
 #passarlo alla rete neurale, farlo riconoscere e poi attaccare la label all'immagine
 
@@ -146,6 +186,7 @@ def classificatore(frames):
 #fare tutto in una sola volta
 
 #Raccolgo i frame e li passo al classificatore
+'''
 video = cv2.VideoCapture("Video finale senza riconoscimento.mp4")
 frames = []
 if (video.isOpened()== False):
@@ -166,12 +207,7 @@ fourcc = -1
 
 out15 = cv2.VideoWriter('project_video_finale.mp4',fourcc, 15, size)
 
-for i in results:
-    out15.write(i)
+for i in tqdm(len(results), desc="Salvataggio frames"):
+    out15.write(results[i])
 out15.release()
-
-
-
-
-#Errore Make sure all arrays contain the same number of samples.
-#Possibilmente ci sono falsi positivi che portano ad avere un numero di facce differente da quello aspettato
+'''
