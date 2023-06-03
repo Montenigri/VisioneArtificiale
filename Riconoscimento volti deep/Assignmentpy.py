@@ -208,9 +208,9 @@ print(np.shape(results[0]))
 height, width, channels = results[0].shape
 size = (width,height)
 
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 
-out15 = cv2.VideoWriter('project_video_finale.avi',fourcc, 15, size)
+out15 = cv2.VideoWriter('project_video_finale.mp4',fourcc, 15, size)
 
 for i in tqdm(range(len(results)), desc="Saving frames into video"):
     out15.write(results[i])
