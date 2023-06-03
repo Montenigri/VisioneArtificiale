@@ -43,7 +43,7 @@ def getDataset(root="train"):
 
     tag = list(map(int, tag))
     foto,tag = shuffle(foto,tag, random_state=42)
-    return foto[:1000],tag[:1000]
+    return foto[:10],tag[:10]
 
 
 def getSets(x,y, percentage=[0.6,0.2]):
@@ -52,7 +52,7 @@ def getSets(x,y, percentage=[0.6,0.2]):
     trainLen = floor(percentage[0]*length)
     valLen = floor(percentage[1]*length) + trainLen
 
-    for i in tqdm(range(len(x)), desc= "Riconoscimento facce"):
+    for i in tqdm(range(len(x)), desc= "Detecting faces"):
         x[i],_ = findFaces(cv2.imread(x[i]),maxDet=1)
 
     x = list(map(np.asarray, x))
@@ -89,7 +89,7 @@ x,y = getDataset()
 
 train, val, test = getSets(x,y)
 
-'''
+
 with open("train.pkl","wb") as ds:
     pickle.dump(train,ds)
 
@@ -98,7 +98,7 @@ with open("val.pkl","wb") as ds:
 
 with open("test.pkl","wb") as ds:
     pickle.dump(test,ds)
-'''
+
 
 (X_train, Y_train) = train
 (X_val,Y_val) = val
@@ -174,22 +174,27 @@ def classificatore(frames):
 
     for f in range(len(frames)):
         faces,boxes = findFaces(frames[f])
+      
+        faces = np.array(faces)
+        faces = np.expand_dims(faces, axis=0)
         #https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
+      
         predict = model.predict(faces)
-        for (boxe,pred) in zip(boxes, predict):
-            frames[f] = cv2.putText(frames[f],nomi[int(pred)], (boxe.xyxy[0][1]-5,boxe.xyxy[0][3]-5),font, 1,(255,255,255),2)
-            frames[f] = cv2.rectangle(frames[f], (boxe.xyxy[0][1], boxe.xyxy[0][3]), (boxe.xyxy[0][0], boxe.xyxy[0][2]), (255, 0, 255), 4)
+        
+        for (boxe,pred) in zip(boxes, predict[0]):
+            frames[f] = cv2.putText(frames[f],nomi[int(pred)], (int(boxe.xyxy[0][1])-5,int(boxe.xyxy[0][3])-5),font, 1,(255,255,255),2)
+            frames[f] = cv2.rectangle(frames[f], (int(boxe.xyxy[0][1]), int(boxe.xyxy[0][3])), (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][2])), (255, 0, 255), 4)
         #Qua da vedere che viene restituito per poi attaccare i nomi alle facce e stamparle sul video
+       
     return frames
     
 
-#fare tutto in una sola volta
 
 #Raccolgo i frame e li passo al classificatore
-'''
+
 video = cv2.VideoCapture("Video finale senza riconoscimento.mp4")
 frames = []
-if (video.isOpened()== False):
+if (video.isOpened() == False):
     print("Error opening video file")
 while(video.isOpened()):
   ret, frame = video.read()
@@ -198,16 +203,15 @@ while(video.isOpened()):
   else:
       break
 
-results = classificatore(frames)
-
-height, width = results[0].shape
+results = classificatore(frames[:30])
+print(np.shape(results[0]))
+height, width, channels = results[0].shape
 size = (width,height)
 
-fourcc = -1 
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
 
-out15 = cv2.VideoWriter('project_video_finale.mp4',fourcc, 15, size)
+out15 = cv2.VideoWriter('project_video_finale.avi',fourcc, 15, size)
 
-for i in tqdm(len(results), desc="Salvataggio frames"):
+for i in tqdm(range(len(results)), desc="Salvataggio frames"):
     out15.write(results[i])
 out15.release()
-'''
