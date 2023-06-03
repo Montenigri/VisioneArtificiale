@@ -180,10 +180,14 @@ def classificatore(frames):
         #https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
       
         predict = model.predict(faces)
-        
+        #
+        #
+        #Sistemare le box, vengono stampate a caso
+        #
+        #
         for (boxe,pred) in zip(boxes, predict[0]):
             frames[f] = cv2.putText(frames[f], nomi[int(pred)] , (int(boxe.xyxy[0][1])-5,int(boxe.xyxy[0][3])-5),font, 1,(255,255,255),2)
-            frames[f] = cv2.rectangle(frames[f], (int(boxe.xywh[0][1]), int(boxe.xywh[0][3])), (int(boxe.xywh[0][0]), int(boxe.xywh[0][2])), (255, 0, 255), 4)
+            frames[f] = cv2.rectangle(frames[f], (int(boxe.xyxy[0][1]), int(boxe.xyxy[0][3])), (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][2])), (255, 0, 255), 4)
         #Qua da vedere che viene restituito per poi attaccare i nomi alle facce e stamparle sul video
        
     return frames
