@@ -36,7 +36,7 @@ def getDataset(root="train"):
         
 
 
-    for k in tqdm(range(len(tag)), desc= "Sostituisco nomi con interi"):
+    for k in tqdm(range(len(tag)), desc= "Changing names to index"):
         for i in range(len(nomi)):
             if tag[k] == nomi[i]:
                 tag[k] = i
@@ -182,7 +182,7 @@ def classificatore(frames):
         predict = model.predict(faces)
         
         for (boxe,pred) in zip(boxes, predict[0]):
-            frames[f] = cv2.putText(frames[f],nomi[int(pred)], (int(boxe.xyxy[0][1])-5,int(boxe.xyxy[0][3])-5),font, 1,(255,255,255),2)
+            frames[f] = cv2.putText(frames[f], nomi[int(pred)] , (int(boxe.xyxy[0][1])-5,int(boxe.xyxy[0][3])-5),font, 1,(255,255,255),2)
             frames[f] = cv2.rectangle(frames[f], (int(boxe.xyxy[0][1]), int(boxe.xyxy[0][3])), (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][2])), (255, 0, 255), 4)
         #Qua da vedere che viene restituito per poi attaccare i nomi alle facce e stamparle sul video
        
@@ -212,6 +212,6 @@ fourcc = cv2.VideoWriter_fourcc(*'XVID')
 
 out15 = cv2.VideoWriter('project_video_finale.avi',fourcc, 15, size)
 
-for i in tqdm(range(len(results)), desc="Salvataggio frames"):
+for i in tqdm(range(len(results)), desc="Saving frames into video"):
     out15.write(results[i])
 out15.release()
