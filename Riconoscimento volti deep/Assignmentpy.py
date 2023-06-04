@@ -133,6 +133,15 @@ for i in tqdm(range(len(X_train)), desc= "data augmentation"):
 X_train = np.array(Xtrain)
 Y_train = np.array(Ytrain)
 
+##TEST##
+
+
+for i in range(10):
+    cv2.imwrite(f"{i}.jpg",X_train[i])
+
+
+##FINE TEST##
+
 #A questo punto dobbiamo riconoscere i volti con una rete neurale
 
 model = Sequential()
