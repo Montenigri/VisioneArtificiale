@@ -85,19 +85,27 @@ def findFaces(frame, maxDet = 10):
 
 #Get dei dati
 
-x,y = getDataset()
+if os.path.exists("train.pkl") and os.path.exists("val.pkl") and os.path.exists("test.pkl"):
+    with open("train.pkl","rb") as ds:
+        train = pickle.load(ds)
+    with open("val.pkl","rb") as ds:
+        val = pickle.load(ds)
+    with open("test.pkl","rb") as ds:
+        test = pickle.load(ds)
 
-train, val, test = getSets(x,y)
+else: 
+    x,y = getDataset()
 
+    train, val, test = getSets(x,y)
 
-with open("train.pkl","wb") as ds:
-    pickle.dump(train,ds)
+    with open("train.pkl","wb") as ds:
+        pickle.dump(train,ds)
 
-with open("val.pkl","wb") as ds:
-    pickle.dump(val,ds)
+    with open("val.pkl","wb") as ds:
+        pickle.dump(val,ds)
 
-with open("test.pkl","wb") as ds:
-    pickle.dump(test,ds)
+    with open("test.pkl","wb") as ds:
+        pickle.dump(test,ds)
 
 
 (X_train, Y_train) = train
@@ -146,18 +154,22 @@ model.compile(
 
 model.summary()
 
-callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3)
 
 
+if os.path.exists("modelClassificatore.h5"):
+    model.load_weights('modelClassificatore.h5')
 
-model.fit(
-    X_train, to_categorical(Y_train), epochs=100, 
-    batch_size=64, shuffle=True, 
-    validation_data=(X_val,to_categorical(Y_val)),
-    callbacks=callback
-    )
+else:
+    callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3)
+    model.fit(
+        X_train, to_categorical(Y_train), epochs=100, 
+        batch_size=64, shuffle=True, 
+        validation_data=(X_val,to_categorical(Y_val)),
+        callbacks=callback
+        )
 
-#model.save_weights('modelClassificatore.h5')
+    model.save_weights('modelClassificatore.h5')
+
 
 results = model.evaluate(
   X_test,
@@ -172,14 +184,14 @@ def classificatore(frames):
     #box ed i nomi
     font = cv2.FONT_HERSHEY_SIMPLEX
 
-    for f in range(len(frames)):
+    for f in tqdm(range(len(frames)), desc="Face recognition per frame"):
         faces,boxes = findFaces(frames[f])
       
         faces = np.array(faces)
         faces = np.expand_dims(faces, axis=0)
         #https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
       
-        predict = model.predict(faces)
+        predict = model.predict(faces, verbose=False)
         #
         #
         #Sistemare le box, vengono stampate a caso
@@ -207,7 +219,7 @@ while(video.isOpened()):
   else:
       break
 
-results = classificatore(frames[:30])
+results = classificatore(frames[:1500])
 print(np.shape(results[0]))
 height, width, channels = results[0].shape
 size = (width,height)
