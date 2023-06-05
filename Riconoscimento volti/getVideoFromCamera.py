@@ -3,8 +3,8 @@ from datetime import datetime
 import time
 
 
-src = 'rtsp://CV2023:Studente123@147.163.26.182:554/Streaming/Channels/101'
-#src = 0
+#src = 'rtsp://CV2023:Studente123@147.163.26.182:554/Streaming/Channels/101'
+src = 0
 
 cap = cv.VideoCapture(src)
 # Define the codec and create VideoWriter object
@@ -30,7 +30,7 @@ while cap.isOpened():
     framesRecorded += 1
     cv.putText(frame,f'{framesRecorded}',(25,25), font, 1,(255,255,255),2,cv.LINE_AA)
     cv.imshow('frame', frame)
-    if cv.waitKey(1) == ord('q') or framesRecorded==40:
+    if cv.waitKey(1) == ord('q') or framesRecorded==5000:
         break
 # Release everything if job is finished
 cap.release()
