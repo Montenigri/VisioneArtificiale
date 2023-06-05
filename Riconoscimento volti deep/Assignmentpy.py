@@ -142,8 +142,8 @@ Y_train = np.array(Ytrain)
 ##TEST##
 
 
-for i in range(10):
-    cv2.imwrite(f"{i}.jpg",X_train[i])
+#for i in range(10):
+#    cv2.imwrite(f"{i}.jpg",X_train[i])
 
 
 ##FINE TEST##
@@ -207,11 +207,6 @@ def classificatore(frames):
         #https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
       
         predict = model.predict(faces, verbose=False)
-        #
-        #
-        #Sistemare le box, vengono stampate a caso
-        #
-        #
         for (boxe,pred) in zip(boxes, predict[0]):
             frames[f] = cv2.putText(frames[f], nomi[int(pred)] , (int(boxe.xyxy[0][0])-5,int(boxe.xyxy[0][1])-5),font, 1,(255,255,255),2)
             frames[f] = cv2.rectangle(frames[f], (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][1])), (int(boxe.xyxy[0][2]), int(boxe.xyxy[0][3])), (255, 0, 255), 4)
