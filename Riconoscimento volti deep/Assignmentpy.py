@@ -50,7 +50,7 @@ def getDataset(root="train"):
 
     tag = list(map(int, tag))
     foto,tag = shuffle(foto,tag, random_state=42)
-    return foto[:100],tag[:100]
+    return foto[:1000],tag[:1000]
 
 
 def getSets(x,y, percentage=[0.6,0.2]):
