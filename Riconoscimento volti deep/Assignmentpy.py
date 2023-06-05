@@ -60,7 +60,7 @@ def getSets(x,y, percentage=[0.6,0.2]):
     valLen = floor(percentage[1]*length) + trainLen
 
     for i in tqdm(range(len(x)), desc= "Detecting faces"):
-        x[i],_ = findFaces(cv2.imread(x[i]),maxDet=1)
+        x[i],_ = findFaces(cv2.cvtColor(cv2.imread(x[i]),cv2.COLOR_BGR2RGB),maxDet=1)
 
     x = list(map(np.asarray, x))
     
@@ -81,7 +81,7 @@ def findFaces(frame, maxDet = 10):
         boxes = result.boxes  
         boxes = boxes.numpy()
         face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
-        face =  resizer(face)
+        face =  cv2.resize(face,(64,64))
         faces = list(chain(faces,face))
         boxesDetect = list(chain(boxesDetect,boxes))
     
@@ -244,6 +244,25 @@ out15.release()
 
 '''
 
+
+def classificatoreIRT(frame):
+    #Per mantenere l'univocità dei volti sui frame, ciclo singolamente i frame per poi inserire le
+    #box ed i nomi
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    faces,boxes = findFaces(frame)
+    
+    faces = np.array(faces)
+    faces = np.expand_dims(faces, axis=0)
+    #https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
+    
+    predict = model.predict(faces, verbose=False)
+    for (boxe,pred) in zip(boxes, predict[0]):
+        frame = cv2.putText(frame, nomi[int(pred)] , (int(boxe.xyxy[0][0])-5,int(boxe.xyxy[0][1])-5),font, 1,(255,255,255),2)
+        frame = cv2.rectangle(frame, (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][1])), (int(boxe.xyxy[0][2]), int(boxe.xyxy[0][3])), (255, 0, 255), 4)
+       
+    return frame
+
 camera = cv2.VideoCapture(0)
 if not camera.isOpened:
     print('--(!)Error opening video capture')
@@ -256,10 +275,10 @@ while True:
     if frame is None:
         print('--(!) No captured frame -- Break!')
         break
-    
-    frame = classificatore(frame)
+    frame = classificatoreIRT(frame)
     cv2.imshow('Capture - Face detection', frame)
     if cv2.waitKey(10) == 27:
+        cv2.waitKey(0)
         cv2.destroyAllWindows()
         break
         
