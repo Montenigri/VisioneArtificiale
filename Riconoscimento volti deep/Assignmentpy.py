@@ -60,7 +60,7 @@ def getSets(x,y, percentage=[0.6,0.2]):
     valLen = floor(percentage[1]*length) + trainLen
 
     for i in tqdm(range(len(x)), desc= "Detecting faces"):
-        x[i],_ = findFaces(cv2.cvtColor(cv2.imread(x[i]),cv2.COLOR_BGR2RGB),maxDet=1)
+        x[i],_ = findFaces(cv2.imread(x[i]),maxDet=1)
 
     x = list(map(np.asarray, x))
     
