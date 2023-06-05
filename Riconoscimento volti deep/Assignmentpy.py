@@ -217,7 +217,6 @@ def classificatore(frames):
 
 
 #Raccolgo i frame e li passo al classificatore
-'''
 video = cv2.VideoCapture("Video finale senza riconoscimento.mp4")
 frames = []
 if (video.isOpened() == False):
@@ -241,8 +240,9 @@ out15 = cv2.VideoWriter('project_video_finale.mp4',fourcc, 15, size)
 for i in tqdm(range(len(results)), desc="Saving frames into video"):
     out15.write(results[i])
 out15.release()
-'''
 
+
+'''
 
 camera = cv2.VideoCapture(0)
 if not camera.isOpened:
@@ -262,3 +262,5 @@ while True:
     if cv2.waitKey(10) == 27:
         cv2.destroyAllWindows()
         break
+        
+'''
