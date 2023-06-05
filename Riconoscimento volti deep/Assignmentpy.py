@@ -217,7 +217,7 @@ def classificatore(frames):
        
     return frames
     
-
+'''
 
 #Raccolgo i frame e li passo al classificatore
 video = cv2.VideoCapture("Video finale senza riconoscimento.mp4")
@@ -285,4 +285,3 @@ while True:
         cv2.destroyAllWindows()
         break
         
-'''
