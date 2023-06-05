@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from keras.models import Sequential
-from keras.layers import Conv2D, Flatten, Dense, MaxPool2D, Dropout,RandomBrightness,RandomRotation,RandomFlip,RandomZoom
+from keras.layers import Conv2D, Flatten, Dense, MaxPool2D, Dropout,RandomBrightness,RandomRotation,RandomFlip,RandomZoom,Resizing
 from keras.utils import to_categorical
 from ultralytics import YOLO
 import cv2
@@ -21,6 +21,13 @@ detect = YOLO('yolov8n-face.pt')
 
 nomi = ["Davide","Francesco", "Gabriele", "Stefano", "Unknown"]
 
+
+resizer = Resizing(
+    64,
+    64,
+    interpolation='bilinear',
+    crop_to_aspect_ratio=True,
+)
 
 def getDataset(root="train"):
 
@@ -43,7 +50,7 @@ def getDataset(root="train"):
 
     tag = list(map(int, tag))
     foto,tag = shuffle(foto,tag, random_state=42)
-    return foto,tag
+    return foto[:100],tag[:100]
 
 
 def getSets(x,y, percentage=[0.6,0.2]):
@@ -74,8 +81,7 @@ def findFaces(frame, maxDet = 10):
         boxes = result.boxes  
         boxes = boxes.numpy()
         face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
-        #Da mettere con padding per non storpiare le facce
-        face =  cv2.resize(face, (64,64))
+        face =  resizer(face)
         faces = list(chain(faces,face))
         boxesDetect = list(chain(boxesDetect,boxes))
     
@@ -165,8 +171,8 @@ model.summary()
 
 
 
-if os.path.exists("modelClassificatore.h5"):
-    model.load_weights('modelClassificatore.h5')
+if os.path.exists("pesiClassificatore.h5"):
+    model.load_weights('pesiClassificatore.h5')
 
 else:
     callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3)
@@ -177,7 +183,7 @@ else:
         callbacks=callback
         )
 
-    model.save_weights('modelClassificatore.h5')
+    model.save_weights('pesiClassificatore.h5')
 
 
 results = model.evaluate(
@@ -216,7 +222,7 @@ def classificatore(frames):
 
 
 #Raccolgo i frame e li passo al classificatore
-
+'''
 video = cv2.VideoCapture("Video finale senza riconoscimento.mp4")
 frames = []
 if (video.isOpened() == False):
@@ -240,3 +246,24 @@ out15 = cv2.VideoWriter('project_video_finale.mp4',fourcc, 15, size)
 for i in tqdm(range(len(results)), desc="Saving frames into video"):
     out15.write(results[i])
 out15.release()
+'''
+
+
+camera = cv2.VideoCapture(0)
+if not camera.isOpened:
+    print('--(!)Error opening video capture')
+    exit(0)
+
+font = cv2.FONT_HERSHEY_SIMPLEX
+
+while True:
+    ret, frame = camera.read()
+    if frame is None:
+        print('--(!) No captured frame -- Break!')
+        break
+    
+    frame = classificatore(frame)
+    cv2.imshow('Capture - Face detection', frame)
+    if cv2.waitKey(10) == 27:
+        cv2.destroyAllWindows()
+        break
