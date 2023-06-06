@@ -80,16 +80,24 @@ def findFaces(frame, maxDet = 10):
     for result in img_test:
         boxes = result.boxes  
         boxes = boxes.numpy()
-        try:
-            face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
-            face =  cv2.resize(face,(64,64))
-        except:
-            face = np.zeros((64,64,3))
-        faces = list(chain(faces,face))
+        for b in boxes:
+            face = frame[int(b.xyxy[0][1]):int(b.xyxy[0][3]),int(b.xyxy[0][0]):int(b.xyxy[0][2]),:]
+            face = cv2.resize(face,(64,64))
+            faces.append(face)
+
         boxesDetect = list(chain(boxesDetect,boxes))
-    
+    faces = np.array(faces)
+
     return faces, boxesDetect
 
+
+
+data_augmentation = tf.keras.Sequential([
+  RandomFlip("horizontal"),
+  RandomRotation(0.2),
+  RandomBrightness((-0.2,0.2)),
+  RandomZoom(.1, .1)
+])
 
 
 #Get dei dati
@@ -108,6 +116,18 @@ else:
     train, val, test = getSets(x,y)
 
     with open("train.pkl","wb") as ds:
+        (X_train, Y_train) = train
+        Xtrain = []
+        Ytrain = []
+        for i in tqdm(range(len(X_train)), desc= "data augmentation"):
+                Xtrain.append(data_augmentation(X_train[i]))
+                Xtrain.append(X_train[i])
+                Ytrain.append(Y_train[i])
+                Ytrain.append(Y_train[i])
+
+        X_train = np.array(Xtrain)
+        Y_train = np.array(Ytrain)
+        train = (X_train,Y_train)
         pickle.dump(train,ds)
 
     with open("val.pkl","wb") as ds:
@@ -122,25 +142,8 @@ else:
 (X_test, Y_test) = test
 
 
-#Dobbiamo fare data augmentation qui
 
-data_augmentation = tf.keras.Sequential([
-  RandomFlip("horizontal"),
-  RandomRotation(0.2),
-  RandomBrightness((-0.2,0.2)),
-  RandomZoom(.1, .1)
-])
 
-Xtrain = []
-Ytrain = []
-for i in tqdm(range(len(X_train)), desc= "data augmentation"):
-        Xtrain.append(data_augmentation(X_train[i]))
-        Xtrain.append(X_train[i])
-        Ytrain.append(Y_train[i])
-        Ytrain.append(Y_train[i])
-
-X_train = np.array(Xtrain)
-Y_train = np.array(Ytrain)
 
 ##TEST##
 
@@ -173,7 +176,7 @@ model.compile(
 )
 
 
-model.summary()
+#model.summary()
 
 
 
@@ -191,37 +194,27 @@ else:
 
     model.save_weights('pesiClassificatore.h5')
 
-
+'''
 results = model.evaluate(
   X_test,
   to_categorical(Y_test)
 )
 print(results)
+'''
 #qui dobbiamo ciclare ogni frame del video, per ogni frame ritagliare il volto
 #passarlo alla rete neurale, farlo riconoscere e poi attaccare la label all'immagine
 
 def classificatore(frames):
-    #Per mantenere l'univocità dei volti sui frame, ciclo singolamente i frame per poi inserire le
-    #box ed i nomi
     font = cv2.FONT_HERSHEY_SIMPLEX
-
     for f in tqdm(range(len(frames)), desc="Face recognition per frame"):
         faces,boxes = findFaces(frames[f])
-      
-        faces = np.array(faces)
-        faces = np.expand_dims(faces, axis=0)
-        #https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
-      
-        predict = model.predict(faces, verbose=False)
-        for (boxe,pred) in zip(boxes, predict[0]):
-            frames[f] = cv2.putText(frames[f], nomi[int(pred)] , (int(boxe.xyxy[0][0])-5,int(boxe.xyxy[0][1])-5),font, 1,(255,255,255),2)
+        predict=model(faces)
+        for (boxe,pred) in zip(boxes, predict):
+            frames[f] = cv2.putText(frames[f], nomi[np.argmax(pred)] , (int(boxe.xyxy[0][0])-5,int(boxe.xyxy[0][1])-5),font, 1,(255,255,255),2)
             frames[f] = cv2.rectangle(frames[f], (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][1])), (int(boxe.xyxy[0][2]), int(boxe.xyxy[0][3])), (255, 0, 255), 4)
-        #Qua da vedere che viene restituito per poi attaccare i nomi alle facce e stamparle sul video
-       
     return frames
     
 '''
-
 #Raccolgo i frame e li passo al classificatore
 video = cv2.VideoCapture("Video finale senza riconoscimento.mp4")
 frames = []
@@ -246,26 +239,36 @@ out15 = cv2.VideoWriter('project_video_finale.mp4',fourcc, 15, size)
 for i in tqdm(range(len(results)), desc="Saving frames into video"):
     out15.write(results[i])
 out15.release()
-
-
 '''
 
+
+def findFacesTest(frame, maxDet = 10):
+    img_test = detect.predict(source=frame,max_det=maxDet,verbose=False)
+    faces = []
+    boxesDetect = []
+    for result in img_test:
+        boxes = result.boxes  
+        boxes = boxes.numpy()
+        for b in boxes:
+            face = frame[int(b.xyxy[0][1]):int(b.xyxy[0][3]),int(b.xyxy[0][0]):int(b.xyxy[0][2]),:]
+            face = cv2.resize(face,(64,64))
+            faces.append(face)
+
+        boxesDetect = list(chain(boxesDetect,boxes))
+    faces = np.array(faces)
+
+    return faces, boxesDetect
 
 def classificatoreIRT(frame):
     #Per mantenere l'univocità dei volti sui frame, ciclo singolamente i frame per poi inserire le
     #box ed i nomi
     font = cv2.FONT_HERSHEY_SIMPLEX
 
-    faces,boxes = findFaces(frame)
-    
-    faces = np.array(faces)
-    faces = np.expand_dims(faces, axis=0)
-    #https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
-    
-    predict = model.predict(faces, verbose=False)
+    faces,boxes = findFaces(frame)    
+    predict=model(faces)
     try:
-        for (boxe,pred) in zip(boxes, predict[0]):
-            frame = cv2.putText(frame, nomi[int(pred)] , (int(boxe.xyxy[0][0])-5,int(boxe.xyxy[0][1])-5),font, 1,(255,255,255),2)
+        for (boxe,pred) in zip(boxes, predict):
+            frame = cv2.putText(frame, nomi[np.argmax(pred)] , (int(boxe.xyxy[0][0])-5,int(boxe.xyxy[0][1])-5),font, 1,(255,255,255),2)
             frame = cv2.rectangle(frame, (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][1])), (int(boxe.xyxy[0][2]), int(boxe.xyxy[0][3])), (255, 0, 255), 4)
     except:
         pass    
@@ -289,4 +292,3 @@ while True:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         break
-        
