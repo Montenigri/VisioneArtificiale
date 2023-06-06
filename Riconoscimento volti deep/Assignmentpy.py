@@ -50,7 +50,7 @@ def getDataset(root="train"):
 
     tag = list(map(int, tag))
     foto,tag = shuffle(foto,tag, random_state=42)
-    return foto,tag
+    return foto[:100],tag[:100]
 
 
 def getSets(x,y, percentage=[0.6,0.2]):
@@ -62,14 +62,14 @@ def getSets(x,y, percentage=[0.6,0.2]):
     for i in tqdm(range(len(x)), desc= "Detecting faces"):
         x[i],_ = findFaces(cv2.imread(x[i]),maxDet=1)
 
-    x = list(map(np.asarray, x))
+    x = list(map(np.array, x))
     
     x = np.array(x)
     y = np.array(y)
     train = (x[:trainLen],y[:trainLen])
     val = (x[trainLen:valLen],y[trainLen:valLen]) 
     test  = (x[valLen:],y[valLen:])
-
+    print(np.shape(train))
     return train, val, test
 
 
@@ -82,12 +82,11 @@ def findFaces(frame, maxDet = 10):
         boxes = boxes.numpy()
         for b in boxes:
             face = frame[int(b.xyxy[0][1]):int(b.xyxy[0][3]),int(b.xyxy[0][0]):int(b.xyxy[0][2]),:]
-            face = resizer(face)
+            face = cv2.resize(face,(64,64))
             faces.append(face)
 
         boxesDetect = list(chain(boxesDetect,boxes))
-    faces = np.array(faces)
-
+    faces = np.array(faces,dtype=np.float32)
     return faces, boxesDetect
 
 
