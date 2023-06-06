@@ -82,7 +82,7 @@ def findFaces(frame, maxDet = 10):
         boxes = boxes.numpy()
         for b in boxes:
             face = frame[int(b.xyxy[0][1]):int(b.xyxy[0][3]),int(b.xyxy[0][0]):int(b.xyxy[0][2]),:]
-            face = cv2.resize(face,(64,64))
+            face = resizer(face)
             faces.append(face)
 
         boxesDetect = list(chain(boxesDetect,boxes))
@@ -260,8 +260,6 @@ def findFacesTest(frame, maxDet = 10):
     return faces, boxesDetect
 
 def classificatoreIRT(frame):
-    #Per mantenere l'univocità dei volti sui frame, ciclo singolamente i frame per poi inserire le
-    #box ed i nomi
     font = cv2.FONT_HERSHEY_SIMPLEX
 
     faces,boxes = findFaces(frame)    
