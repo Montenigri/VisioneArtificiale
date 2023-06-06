@@ -80,8 +80,11 @@ def findFaces(frame, maxDet = 10):
     for result in img_test:
         boxes = result.boxes  
         boxes = boxes.numpy()
-        face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
-        face =  cv2.resize(face,(64,64))
+        try:
+            face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
+            face =  cv2.resize(face,(64,64))
+        except:
+            face = np.zeros((64,64,3))
         faces = list(chain(faces,face))
         boxesDetect = list(chain(boxesDetect,boxes))
     
@@ -260,10 +263,12 @@ def classificatoreIRT(frame):
     #https://www.tensorflow.org/api_docs/python/tf/keras/Model#predict
     
     predict = model.predict(faces, verbose=False)
-    for (boxe,pred) in zip(boxes, predict[0]):
-        frame = cv2.putText(frame, nomi[int(pred)] , (int(boxe.xyxy[0][0])-5,int(boxe.xyxy[0][1])-5),font, 1,(255,255,255),2)
-        frame = cv2.rectangle(frame, (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][1])), (int(boxe.xyxy[0][2]), int(boxe.xyxy[0][3])), (255, 0, 255), 4)
-       
+    try:
+        for (boxe,pred) in zip(boxes, predict[0]):
+            frame = cv2.putText(frame, nomi[int(pred)] , (int(boxe.xyxy[0][0])-5,int(boxe.xyxy[0][1])-5),font, 1,(255,255,255),2)
+            frame = cv2.rectangle(frame, (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][1])), (int(boxe.xyxy[0][2]), int(boxe.xyxy[0][3])), (255, 0, 255), 4)
+    except:
+        pass    
     return frame
 
 camera = cv2.VideoCapture(0)
