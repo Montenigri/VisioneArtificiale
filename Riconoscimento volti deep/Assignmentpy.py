@@ -41,8 +41,6 @@ def getDataset(root="train"):
         foto = list(chain(foto,imgs))
         tag = list(chain(tag,dirs))
         
-
-
     for k in tqdm(range(len(tag)), desc= "Changing names to index"):
         for i in range(len(nomi)):
             if tag[k] == nomi[i]:
@@ -50,7 +48,7 @@ def getDataset(root="train"):
 
     tag = list(map(int, tag))
     foto,tag = shuffle(foto,tag, random_state=42)
-    return foto[:2513],tag[:2513]
+    return foto,tag
 
 
 def getSets(x,y, percentage=[0.6,0.2]):
@@ -157,12 +155,12 @@ else:
 
 model = Sequential()
 model.add(Conv2D(32, (5, 5), activation='relu', input_shape=(64, 64, 3)))
-#model.add(MaxPool2D(pool_size=(2,2)))
 model.add(Conv2D(64, (5, 5), activation='relu'))
 model.add(MaxPool2D(pool_size=(2,2)))
-#model.add(Dropout(0.2))
+model.add(Dropout(0.1))
 model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPool2D(pool_size=(2,2)))
 model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(Dropout(0.1))
 model.add(Flatten())
@@ -186,7 +184,7 @@ else:
     callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3)
     model.fit(
         X_train, to_categorical(Y_train), epochs=100, 
-        batch_size=64, shuffle=True, 
+        batch_size=512, shuffle=True, 
         validation_data=(X_val,to_categorical(Y_val)),
         callbacks=callback
         )
@@ -212,7 +210,7 @@ def classificatore(frames):
             frames[f] = cv2.rectangle(frames[f], (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][1])), (int(boxe.xyxy[0][2]), int(boxe.xyxy[0][3])), (255, 0, 255), 4)
     return frames
     
-
+'''
 #Raccolgo i frame e li passo al classificatore
 video = cv2.VideoCapture("Video finale senza riconoscimento.mp4")
 frames = []
@@ -237,7 +235,7 @@ for i in tqdm(range(len(results)), desc="Saving frames into video"):
     out15.write(results[i])
 out15.release()
 
-
+'''
 '''
 def findFacesIRT(frame, maxDet = 10):
     img_test = detect.predict(source=frame,max_det=maxDet,verbose=False)
