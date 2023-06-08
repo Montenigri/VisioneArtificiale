@@ -77,14 +77,13 @@ def findFaces(frame, maxDet = 10):
     for result in img_test:
         boxes = result.boxes  
         boxes = boxes.numpy()
-        try:
-            face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
-            face = resizer(face)
-        except:
-            face = np.zeros((64,64,3))
-        faces = list(chain(faces,face))
+        
+        face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
+        face = resizer(face)
+        
+        faces.append(face)
         boxesDetect = list(chain(boxesDetect,boxes))
-    
+    faces = np.array(faces, dtype=np.float32)
     return faces, boxesDetect
 
 
@@ -191,11 +190,14 @@ else:
 
     model.save_weights('pesiClassificatore.h5')
 
+'''
+
 results = model.evaluate(
   X_test,
   to_categorical(Y_test)
 )
 print(results)
+'''
 
 #qui dobbiamo ciclare ogni frame del video, per ogni frame ritagliare il volto
 #passarlo alla rete neurale, farlo riconoscere e poi attaccare la label all'immagine
@@ -210,7 +212,7 @@ def classificatore(frames):
             frames[f] = cv2.rectangle(frames[f], (int(boxe.xyxy[0][0]), int(boxe.xyxy[0][1])), (int(boxe.xyxy[0][2]), int(boxe.xyxy[0][3])), (255, 0, 255), 4)
     return frames
     
-'''
+
 #Raccolgo i frame e li passo al classificatore
 video = cv2.VideoCapture("Video finale senza riconoscimento.mp4")
 frames = []
@@ -223,7 +225,7 @@ while(video.isOpened()):
   else:
       break
 
-results = classificatore(frames[:1500])
+results = classificatore(frames)
 height, width, channels = results[0].shape
 size = (width,height)
 
@@ -235,7 +237,7 @@ for i in tqdm(range(len(results)), desc="Saving frames into video"):
     out15.write(results[i])
 out15.release()
 
-'''
+
 '''
 def findFacesIRT(frame, maxDet = 10):
     img_test = detect.predict(source=frame,max_det=maxDet,verbose=False)
