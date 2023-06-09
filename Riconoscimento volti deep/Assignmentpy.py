@@ -77,11 +77,10 @@ def findFaces(frame, maxDet = 10):
     for result in img_test:
         boxes = result.boxes  
         boxes = boxes.numpy()
-        
-        face = frame[int(boxes.xyxy[0][1]):int(boxes.xyxy[0][3]),int(boxes.xyxy[0][0]):int(boxes.xyxy[0][2]),:]
-        face = resizer(face)
-        
-        faces.append(face)
+        for b in boxes:
+            face = frame[int(b.xyxy[0][1]):int(b.xyxy[0][3]),int(b.xyxy[0][0]):int(b.xyxy[0][2]),:]
+            face = resizer(face)
+            faces.append(face)
         boxesDetect = list(chain(boxesDetect,boxes))
     faces = np.array(faces, dtype=np.float32)
     return faces, boxesDetect
@@ -238,26 +237,8 @@ for i in tqdm(range(len(results)), desc="Saving frames into video"):
 out15.release()
 
 
-'''
-def findFacesIRT(frame, maxDet = 10):
-    img_test = detect.predict(source=frame,max_det=maxDet,verbose=False)
-    faces = []
-    boxesDetect = []
-    for result in img_test:
-        boxes = result.boxes  
-        boxes = boxes.numpy()
-        for b in boxes:
-            face = frame[int(b.xyxy[0][1]):int(b.xyxy[0][3]),int(b.xyxy[0][0]):int(b.xyxy[0][2]),:]
-            face = cv2.resize(face,(64,64))
-            faces.append(face)
-
-        boxesDetect = list(chain(boxesDetect,boxes))
-    faces = np.array(faces,dtype=np.float32)
-    return faces, boxesDetect
-
 def classificatoreIRT(frame):
     font = cv2.FONT_HERSHEY_SIMPLEX
-
     faces,boxes = findFaces(frame)    
     predict=model(faces)
     try:
@@ -267,6 +248,7 @@ def classificatoreIRT(frame):
     except:
         pass    
     return frame
+'''
 
 camera = cv2.VideoCapture(0)
 if not camera.isOpened:
