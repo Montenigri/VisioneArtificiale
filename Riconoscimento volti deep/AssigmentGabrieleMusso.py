@@ -140,15 +140,6 @@ else:
 
 
 
-##TEST##
-
-
-#for i in range(10):
-#    cv2.imwrite(f"{i}.jpg",X_train[i])
-
-
-##FINE TEST##
-
 #A questo punto dobbiamo riconoscere i volti con una rete neurale
 
 model = Sequential()
@@ -189,14 +180,14 @@ else:
 
     model.save_weights('pesiClassificatore.h5')
 
-'''
+
 
 results = model.evaluate(
   X_test,
   to_categorical(Y_test)
 )
 print(results)
-'''
+
 
 #qui dobbiamo ciclare ogni frame del video, per ogni frame ritagliare il volto
 #passarlo alla rete neurale, farlo riconoscere e poi attaccare la label all'immagine
@@ -248,8 +239,9 @@ def classificatoreIRT(frame):
     except:
         pass    
     return frame
-'''
 
+
+'''
 camera = cv2.VideoCapture(0)
 if not camera.isOpened:
     print('--(!)Error opening video capture')
