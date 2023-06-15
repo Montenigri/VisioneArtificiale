@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from keras.models import Sequential
-from keras.layers import Conv2D, Flatten, Dense, MaxPool2D, Dropout,RandomBrightness,RandomRotation,RandomFlip,RandomZoom,Resizing
+from keras.layers import Conv2D, Flatten, Dense, MaxPool2D, Dropout,RandomBrightness,RandomRotation,RandomFlip,RandomZoom,Resizing, ConvLSTM2D
 from keras.utils import to_categorical
 from ultralytics import YOLO
 import cv2
@@ -141,7 +141,7 @@ else:
 
 
 #A questo punto dobbiamo riconoscere i volti con una rete neurale
-
+'''
 model = Sequential()
 model.add(Conv2D(32, (5, 5), activation='relu', input_shape=(64, 64, 3)))
 model.add(Conv2D(64, (5, 5), activation='relu'))
@@ -155,6 +155,76 @@ model.add(Dropout(0.1))
 model.add(Flatten())
 model.add(Dense(5, activation='softmax'))
 
+model1 = Sequential()
+model1.add(Conv2D(32, (5, 5), activation='relu', input_shape=(64, 64, 3)))
+model1.add(Conv2D(64, (5, 5), activation='relu'))
+model1.add(MaxPool2D(pool_size=(2,2)))
+model1.add(Conv2D(64, (3, 3), activation='relu'))
+model1.add(Conv2D(64, (3, 3), activation='relu'))
+model1.add(MaxPool2D(pool_size=(2,2)))
+model1.add(Conv2D(64, (3, 3), activation='relu'))
+model1.add(Flatten())
+model1.add(Dense(5, activation='softmax'))
+'''
+model = Sequential()
+model.add(Conv2D(32, (5, 5), activation='relu', input_shape=(64, 64, 3)))
+model.add(MaxPool2D(pool_size=(2,2)))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPool2D(pool_size=(2,2)))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(Flatten())
+model.add(Dense(5, activation='softmax'))
+'''
+model3 = Sequential()
+model3.add(Conv2D(32, (5, 5), activation='relu', input_shape=(64, 64, 3)))
+model3.add(Conv2D(64, (3, 3), activation='relu'))
+model3.add(Conv2D(64, (3, 3), activation='relu'))
+model3.add(Flatten())
+model3.add(Dense(5, activation='softmax'))
+
+model4 = Sequential()
+model4.add(Conv2D(32, (5, 5), activation='relu', input_shape=(64, 64, 3)))
+model4.add(Conv2D(64, (5, 5), activation='relu'))
+model4.add(MaxPool2D(pool_size=(2,2)))
+model4.add(Dropout(0.1))
+model4.add(Conv2D(64, (3, 3), activation='relu'))
+model4.add(Conv2D(64, (3, 3), activation='relu'))
+model4.add(MaxPool2D(pool_size=(2,2)))
+model4.add(Conv2D(64, (3, 3), activation='relu'))
+model4.add(Dropout(0.1))
+model4.add(Conv2D(64, (3, 3), activation='relu'))
+model4.add(Conv2D(64, (3, 3), activation='relu'))
+model4.add(Flatten())
+model4.add(Dense(5, activation='softmax'))
+'''
+
+'''
+models=[model,model1,model2,model3,model4]
+modelN=0
+for m in models:
+    m.compile(
+            optimizer="Adam",
+            loss="categorical_crossentropy",
+            metrics=[keras.metrics.CategoricalAccuracy()]
+            )
+    callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3,restore_best_weights=True)
+    m.fit(
+            X_train, to_categorical(Y_train), epochs=100, 
+            batch_size=512, shuffle=True, 
+            validation_data=(X_val,to_categorical(Y_val)),
+            callbacks=callback
+        )
+    results = m.evaluate(
+                    X_test,
+                    to_categorical(Y_test)
+                )
+    with open("results.txt","a") as file:
+        txt= f"Risultato rete{modelN}: \n{results}\n"
+        file.write(txt)
+    modelN+=1
+
+'''
+
 model.compile(
     optimizer="Adam",
     loss="categorical_crossentropy",
@@ -162,7 +232,8 @@ model.compile(
 )
 
 
-#model.summary()
+
+model.summary()
 
 
 
@@ -170,7 +241,7 @@ if os.path.exists("pesiClassificatore.h5"):
     model.load_weights('pesiClassificatore.h5')
 
 else:
-    callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3)
+    callback = keras.callbacks.EarlyStopping(monitor= "val_loss", patience=3, restore_best_weights=True)
     model.fit(
         X_train, to_categorical(Y_train), epochs=100, 
         batch_size=512, shuffle=True, 
